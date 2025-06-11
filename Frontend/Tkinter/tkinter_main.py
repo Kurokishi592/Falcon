@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from cv2_enumerate_cameras import enumerate_cameras
 
 
 class Monitor:
@@ -9,6 +10,11 @@ class Monitor:
 		# AprilTag stuff
 		self.detected_message_label = None
 		self.detected_message_data = "Nothing"
+
+		# Camera stuff
+		self.list_cams = []
+		self.cam_dropdown = None
+		self.cam_select = None
 
 		# Control buttons
 		self.start = None
@@ -53,6 +59,7 @@ class Monitor:
 		self.batt_vol_data = str(0)
 		self.int_temp_data = str(0)
 
+		self.find_cams()
 		self.create_gui()
 
 	def create_gui(self):
@@ -79,20 +86,28 @@ class Monitor:
 
 		# Frame to show AprilTag detected, and corresponding message
 		detection_frame = ttk.LabelFrame(master=self.window, text="Detected Tag")
-		# Grid the camera frame
+		# Grid the detection frame
 		detection_frame.grid(column=0, row=1, padx=10, pady=10, sticky="ew")
 		detection_frame.columnconfigure((0, 1), weight=1)
 		detection_frame.rowconfigure((0, 1), weight=1)
 
-		# Placeholder for where the live cropped view
+		# Placeholder for live cropped view
 		camera_placeholder_label = ttk.Label(master=detection_frame, text="AprilTag detection view to be added")
-		camera_placeholder_label.grid(column=0, row=0, rowspan=2, padx=5, pady=5, sticky="ns")
+		camera_placeholder_label.grid(column=0, row=0, rowspan=3, padx=5, pady=5, sticky="ns")
 
 		detection_label = ttk.Label(master=detection_frame, text="Detected AprilTag message")
 		detection_label.grid(column=1, row=0, padx=5, pady=5, sticky="n")
 
 		self.detected_message_label = ttk.Label(master=detection_frame, text=self.detected_message_data)
-		self.detected_message_label.grid(column=1, row=1, padx=5, pady=5, sticky="n")
+		self.detected_message_label.grid(column=1, row=1, rowspan=2, padx=5, pady=5, sticky="ns")
+
+		cam_select_label = ttk.Label(master=detection_frame, text="Select Camera")
+		cam_select_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
+
+		self.cam_dropdown = ttk.Combobox(master=detection_frame, values=self.list_cams)
+		self.cam_dropdown.grid(column=2, row=1, padx=5, pady=5, sticky="n")
+		self.cam_select = ttk.Button(master=detection_frame, text="Confirm")
+		self.cam_select.grid(column=2, row=2, padx=5, pady=5, sticky="n")
 
 		####################
 		# Buttons Frame #
@@ -245,6 +260,18 @@ class Monitor:
 		self.wind_dir_label.grid(column=1, row=3, padx=5, pady=5, sticky="n")
 		self.batt_vol_label.grid(column=2, row=3, padx=5, pady=5, sticky="n")
 		self.int_temp_label.grid(column=3, row=3, padx=5, pady=5, sticky="n")
+
+	def find_cams(self):
+		self.list_cams = check_cams()
+		print(self.list_cams)
+
+
+def check_cams():
+	cam_list = []
+	for camera_info in enumerate_cameras():
+		print(f'{camera_info.index}: {camera_info.name}')
+		cam_list.append(camera_info.name)
+	return cam_list
 
 
 if __name__ == '__main__':
