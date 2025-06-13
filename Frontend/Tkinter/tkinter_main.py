@@ -1,6 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
 from cv2_enumerate_cameras import enumerate_cameras
+import cv2
+from PIL import Image, ImageTk
+
+# Camera stuff
+vid = cv2.VideoCapture(700)
+width, height = 600, 400
+vid.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+vid.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
 
 class Monitor:
@@ -11,7 +19,10 @@ class Monitor:
 		self.detected_message_label = None
 		self.detected_message_data = "Nothing"
 
-		# Camera stuff
+		# Camera frame stuff
+		self.cam_frame = None
+
+		# Camera select stuff
 		self.list_cams = []
 		self.cam_dropdown = None
 		self.cam_select = None
@@ -62,6 +73,19 @@ class Monitor:
 		self.find_cams()
 		self.create_gui()
 
+	def find_cams(self):
+		self.list_cams = check_cams()
+		print(self.list_cams)
+
+	def cam_feed(self):
+		_, frame = vid.read()
+		raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+		conv_image = Image.fromarray(raw_image)
+		photo_image = ImageTk.PhotoImage(image=conv_image)
+		self.cam_frame.photo_image = photo_image
+		self.cam_frame.configure(image=photo_image)
+		self.cam_frame.after(10, self.cam_feed)
+
 	def create_gui(self):
 		self.window.title("Falcon Parameter Screen")
 
@@ -77,8 +101,13 @@ class Monitor:
 		camera_frame.rowconfigure(0, weight=1, minsize=400)
 
 		# Placeholder for where the live camera feed will be
-		camera_placeholder_label = ttk.Label(master=camera_frame, text="Camera Live Feed to be added here")
-		camera_placeholder_label.grid(column=0, row=0, padx=20, pady=20, sticky="")
+		# camera_placeholder_label = ttk.Label(master=camera_frame, text="Camera Live Feed to be added here")
+		# camera_placeholder_label.grid(column=0, row=0, padx=20, pady=20, sticky="")
+
+		# Live camera feed
+		self.cam_frame = ttk.Label(master=camera_frame)
+		self.cam_frame.grid(column=0, row=0, padx=20, pady=20, sticky="")
+		self.cam_feed()
 
 		####################
 		# Detection Frame #
@@ -260,10 +289,6 @@ class Monitor:
 		self.wind_dir_label.grid(column=1, row=3, padx=5, pady=5, sticky="n")
 		self.batt_vol_label.grid(column=2, row=3, padx=5, pady=5, sticky="n")
 		self.int_temp_label.grid(column=3, row=3, padx=5, pady=5, sticky="n")
-
-	def find_cams(self):
-		self.list_cams = check_cams()
-		print(self.list_cams)
 
 
 def check_cams():
