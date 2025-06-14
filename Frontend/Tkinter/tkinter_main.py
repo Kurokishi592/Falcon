@@ -4,12 +4,6 @@ from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
 
-# Camera stuff
-vid = cv2.VideoCapture(700)
-width, height = 600, 400
-vid.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-vid.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-
 
 class Monitor:
 	def __init__(self, window):
@@ -19,8 +13,12 @@ class Monitor:
 		self.detected_message_label = None
 		self.detected_message_data = "Nothing"
 
+		# Camera instance stuff
+		self.vid = None
+
 		# Camera frame stuff
 		self.cam_frame = None
+		self.width, self.height = 600, 400
 
 		# Camera select stuff
 		self.list_cams = []
@@ -71,14 +69,21 @@ class Monitor:
 		self.int_temp_data = str(0)
 
 		self.find_cams()
+		self.cam_start()
 		self.create_gui()
 
 	def find_cams(self):
 		self.list_cams = check_cams()
 		print(self.list_cams)
 
+	def cam_start(self):
+		# Camera stuff
+		self.vid = cv2.VideoCapture(700)
+		self.vid.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+		self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+
 	def cam_feed(self):
-		_, frame = vid.read()
+		_, frame = self.vid.read()
 		raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 		conv_image = Image.fromarray(raw_image)
 		photo_image = ImageTk.PhotoImage(image=conv_image)
@@ -306,5 +311,4 @@ if __name__ == '__main__':
 	main_window.rowconfigure((0, 1, 2), weight=1)
 	main_window.minsize(1050, 710)
 	app = Monitor(main_window)
-	while True:
-		main_window.update()
+	main_window.mainloop()
