@@ -15,13 +15,15 @@ class Monitor:
 
 		# Camera instance stuff
 		self.vid = None
+		self.use_cam = None
+		self.num_cams = 0
 
 		# Camera frame stuff
 		self.cam_frame = None
 		self.width, self.height = 600, 400
 
 		# Camera select stuff
-		self.list_cams = []
+		self.dict_cams = {}
 		self.cam_dropdown = None
 		self.cam_select = None
 
@@ -69,27 +71,56 @@ class Monitor:
 		self.int_temp_data = str(0)
 
 		self.find_cams()
-		self.cam_start()
+		if self.num_cams == 1:
+			self.cam_start(list(self.dict_cams)[0])
 		self.create_gui()
 
 	def find_cams(self):
-		self.list_cams = check_cams()
-		print(self.list_cams)
+		print("List of cameras detected: ")
+		self.dict_cams = check_cams()
+		self.num_cams = len(self.dict_cams) - 1
+		print(f'Number of cameras detected: {self.num_cams}')
 
-	def cam_start(self):
-		# Camera stuff
-		self.vid = cv2.VideoCapture(700)
-		self.vid.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-		self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+	def cam_start(self, use_cam):
+		if self.use_cam != use_cam:
+			self.use_cam = use_cam
+			print(f'Using camera: {self.use_cam}')
+			if self.vid is not None:
+				self.vid.release()
+			self.vid = cv2.VideoCapture(self.use_cam)
+			self.vid.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+			self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+			self.cam_feed()
+
+	def cam_stop(self):
+		self.use_cam = None
+		if self.vid is not None:
+			self.vid.release()
+			self.vid = None
+			self.cam_frame.photo_image = None
 
 	def cam_feed(self):
-		_, frame = self.vid.read()
-		raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-		conv_image = Image.fromarray(raw_image)
-		photo_image = ImageTk.PhotoImage(image=conv_image)
-		self.cam_frame.photo_image = photo_image
-		self.cam_frame.configure(image=photo_image)
-		self.cam_frame.after(10, self.cam_feed)
+		if self.vid is not None:
+			_, frame = self.vid.read()
+			raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+			conv_image = Image.fromarray(raw_image)
+			photo_image = ImageTk.PhotoImage(image=conv_image)
+			self.cam_frame.photo_image = photo_image
+			self.cam_frame.configure(image=photo_image)
+			self.cam_frame.after(10, self.cam_feed)
+
+	def cam_selection(self):
+		use_cam = self.cam_dropdown.get()		# Returned in integer: string form
+		print(use_cam)
+		if use_cam != "-1: Off":
+			counter = 0
+			str_cam = ""
+			while use_cam[counter].isdigit():
+				str_cam += use_cam[counter]
+				counter += 1
+			self.cam_start(use_cam=int(str_cam))
+		else:
+			self.cam_stop()
 
 	def create_gui(self):
 		self.window.title("Falcon Parameter Screen")
@@ -110,9 +141,8 @@ class Monitor:
 		# camera_placeholder_label.grid(column=0, row=0, padx=20, pady=20, sticky="")
 
 		# Live camera feed
-		self.cam_frame = ttk.Label(master=camera_frame)
+		self.cam_frame = ttk.Label(master=camera_frame, text="Multiple cameras detected, use the dropdown to select")
 		self.cam_frame.grid(column=0, row=0, padx=20, pady=20, sticky="")
-		self.cam_feed()
 
 		####################
 		# Detection Frame #
@@ -138,9 +168,11 @@ class Monitor:
 		cam_select_label = ttk.Label(master=detection_frame, text="Select Camera")
 		cam_select_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
 
-		self.cam_dropdown = ttk.Combobox(master=detection_frame, values=self.list_cams)
+		list_cams = [str(key) + ": " + value for key, value in self.dict_cams.items()]
+		self.cam_dropdown = ttk.Combobox(master=detection_frame, values=list_cams)
+		self.cam_dropdown.current(0)
 		self.cam_dropdown.grid(column=2, row=1, padx=5, pady=5, sticky="n")
-		self.cam_select = ttk.Button(master=detection_frame, text="Confirm")
+		self.cam_select = ttk.Button(master=detection_frame, text="Confirm", command=self.cam_selection)
 		self.cam_select.grid(column=2, row=2, padx=5, pady=5, sticky="n")
 
 		####################
@@ -297,11 +329,11 @@ class Monitor:
 
 
 def check_cams():
-	cam_list = []
+	cam_dict = {-1: "Off"}
 	for camera_info in enumerate_cameras():
 		print(f'{camera_info.index}: {camera_info.name}')
-		cam_list.append(camera_info.name)
-	return cam_list
+		cam_dict[camera_info.index] = camera_info.name
+	return cam_dict
 
 
 if __name__ == '__main__':
