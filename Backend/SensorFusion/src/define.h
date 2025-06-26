@@ -21,4 +21,5 @@
 #define sqr(x) x * x
 #define hypotenuse(x, y) sqrt(sqr(x) + sqr(y))
 
-// #define PRINT
+// #define PRINT(x) Serial.print(x)
+// #define PRINTLN(x) Serial.println(x)

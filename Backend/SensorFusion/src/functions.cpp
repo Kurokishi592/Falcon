@@ -30,31 +30,17 @@ double magX = 9, magY = 9, magZ = 9;
 // MAG processed data
 double yaw = 9;
 
-void sensorStart()
-{}
-	if (MAG_E)
-	{
-		magSetup();
-		if (MAG_C)
-		{
-			PRINTLN("LIS3MDL setup done");
-		}
-	}
-	if (MPU_E)
-	{
-		mpuSetup();
-		if (MPU_C)
-		{
-			PRINTLN("MPU6500 setup done");
-		}
-	}
+double temp = 9;
+
+void sensorStart() {
+	if (MAG_E) { magSetup(); if (MAG_C) { PRINTLN("LIS3MDL setup done"); } }
+	if (MPU_E) { mpuSetup(); if (MPU_C) { PRINTLN("MPU6500 setup done"); } }
 }
 
 /**
  * Kalman Filter TKJ setup
  */
-void kalmanSetup()
-{
+void kalmanSetup() {
 	kalmanX.setAngle(roll);
 	kalmanY.setAngle(pitch);
 	kalmanZ.setAngle(yaw);
@@ -71,125 +57,107 @@ void kalmanSetup()
 /**
  * LIS3MDL setup process
  */
-void magSetup()
-{
+void magSetup() {
 	int count = 0;
 
-	// PRINTLN("Adafruit LIS3MDL test!");
-	// Try to initialize!
-	// while (! lis3mdl.begin_I2C() && count < 10) {          // hardware I2C mode, can pass in address & alt Wire
-	// while (! lis3mdl.begin_SPI(LIS3MDL_CS) && count < 10) {  // hardware SPI mode
-	while (!MAG.begin_SPI(CS_MAG, CLK, MISO, MOSI) && count < 10)
-	{ // soft SPI
+	while (!MAG.begin_SPI(CS_MAG, CLK, MISO, MOSI) && count < 10) { // soft SPI
 		PRINTLN("Failed to find LIS3MDL chip");
 		count += 1;
 		delay(100);
 	}
-	if (count < 10)
-	{
-		PRINTLN("MAG connected");
-		MAG_C = true;
-	}
-	else
-	{
-		PRINTLN("MAG NOT connected");
-	}
+	if (count < 10) { PRINTLN("MAG connected"); MAG_C = true; }
+	else { PRINTLN("MAG NOT connected"); }
 
-	if (MAG_C)
-	{
+	if (MAG_C) {
 		MAG.setPerformanceMode(LIS3MDL_ULTRAHIGHMODE);
 		PRINT("Performance mode set to: ");
-		switch (MAG.getPerformanceMode())
-		{
-		case LIS3MDL_LOWPOWERMODE:
-			PRINTLN("Low");
-			break;
-		case LIS3MDL_MEDIUMMODE:
-			PRINTLN("Medium");
-			break;
-		case LIS3MDL_HIGHMODE:
-			PRINTLN("High");
-			break;
-		case LIS3MDL_ULTRAHIGHMODE:
-			PRINTLN("Ultra-High");
-			break;
+		switch (MAG.getPerformanceMode()) {
+			case LIS3MDL_LOWPOWERMODE:
+				PRINTLN("Low");
+				break;
+			case LIS3MDL_MEDIUMMODE:
+				PRINTLN("Medium");
+				break;
+			case LIS3MDL_HIGHMODE:
+				PRINTLN("High");
+				break;
+			case LIS3MDL_ULTRAHIGHMODE:
+				PRINTLN("Ultra-High");
+				break;
 		}
 
 		MAG.setOperationMode(LIS3MDL_CONTINUOUSMODE);
 		PRINT("Operation mode set to: ");
 		// Single shot mode will complete conversion and go into power down
-		switch (MAG.getOperationMode())
-		{
-		case LIS3MDL_CONTINUOUSMODE:
-			PRINTLN("Continuous");
-			break;
-		case LIS3MDL_SINGLEMODE:
-			PRINTLN("Single mode");
-			break;
-		case LIS3MDL_POWERDOWNMODE:
-			PRINTLN("Power-down");
-			break;
+		switch (MAG.getOperationMode()) {
+			case LIS3MDL_CONTINUOUSMODE:
+				PRINTLN("Continuous");
+				break;
+			case LIS3MDL_SINGLEMODE:
+				PRINTLN("Single mode");
+				break;
+			case LIS3MDL_POWERDOWNMODE:
+				PRINTLN("Power-down");
+				break;
 		}
 
 		MAG.setDataRate(LIS3MDL_DATARATE_155_HZ);
 		// You can check the datarate by looking at the frequency of the DRDY pin
 		PRINT("Data rate set to: ");
-		switch (MAG.getDataRate())
-		{
-		case LIS3MDL_DATARATE_0_625_HZ:
-			PRINTLN("0.625 Hz");
-			break;
-		case LIS3MDL_DATARATE_1_25_HZ:
-			PRINTLN("1.25 Hz");
-			break;
-		case LIS3MDL_DATARATE_2_5_HZ:
-			PRINTLN("2.5 Hz");
-			break;
-		case LIS3MDL_DATARATE_5_HZ:
-			PRINTLN("5 Hz");
-			break;
-		case LIS3MDL_DATARATE_10_HZ:
-			PRINTLN("10 Hz");
-			break;
-		case LIS3MDL_DATARATE_20_HZ:
-			PRINTLN("20 Hz");
-			break;
-		case LIS3MDL_DATARATE_40_HZ:
-			PRINTLN("40 Hz");
-			break;
-		case LIS3MDL_DATARATE_80_HZ:
-			PRINTLN("80 Hz");
-			break;
-		case LIS3MDL_DATARATE_155_HZ:
-			PRINTLN("155 Hz");
-			break;
-		case LIS3MDL_DATARATE_300_HZ:
-			PRINTLN("300 Hz");
-			break;
-		case LIS3MDL_DATARATE_560_HZ:
-			PRINTLN("560 Hz");
-			break;
-		case LIS3MDL_DATARATE_1000_HZ:
-			PRINTLN("1000 Hz");
-			break;
+		switch (MAG.getDataRate()) {
+			case LIS3MDL_DATARATE_0_625_HZ:
+				PRINTLN("0.625 Hz");
+				break;
+			case LIS3MDL_DATARATE_1_25_HZ:
+				PRINTLN("1.25 Hz");
+				break;
+			case LIS3MDL_DATARATE_2_5_HZ:
+				PRINTLN("2.5 Hz");
+				break;
+			case LIS3MDL_DATARATE_5_HZ:
+				PRINTLN("5 Hz");
+				break;
+			case LIS3MDL_DATARATE_10_HZ:
+				PRINTLN("10 Hz");
+				break;
+			case LIS3MDL_DATARATE_20_HZ:
+				PRINTLN("20 Hz");
+				break;
+			case LIS3MDL_DATARATE_40_HZ:
+				PRINTLN("40 Hz");
+				break;
+			case LIS3MDL_DATARATE_80_HZ:
+				PRINTLN("80 Hz");
+				break;
+			case LIS3MDL_DATARATE_155_HZ:
+				PRINTLN("155 Hz");
+				break;
+			case LIS3MDL_DATARATE_300_HZ:
+				PRINTLN("300 Hz");
+				break;
+			case LIS3MDL_DATARATE_560_HZ:
+				PRINTLN("560 Hz");
+				break;
+			case LIS3MDL_DATARATE_1000_HZ:
+				PRINTLN("1000 Hz");
+				break;
 		}
 
 		MAG.setRange(LIS3MDL_RANGE_4_GAUSS);
 		PRINT("Range set to: ");
-		switch (MAG.getRange())
-		{
-		case LIS3MDL_RANGE_4_GAUSS:
-			PRINTLN("+-4 gauss");
-			break;
-		case LIS3MDL_RANGE_8_GAUSS:
-			PRINTLN("+-8 gauss");
-			break;
-		case LIS3MDL_RANGE_12_GAUSS:
-			PRINTLN("+-12 gauss");
-			break;
-		case LIS3MDL_RANGE_16_GAUSS:
-			PRINTLN("+-16 gauss");
-			break;
+		switch (MAG.getRange()) {
+			case LIS3MDL_RANGE_4_GAUSS:
+				PRINTLN("+-4 gauss");
+				break;
+			case LIS3MDL_RANGE_8_GAUSS:
+				PRINTLN("+-8 gauss");
+				break;
+			case LIS3MDL_RANGE_12_GAUSS:
+				PRINTLN("+-12 gauss");
+				break;
+			case LIS3MDL_RANGE_16_GAUSS:
+				PRINTLN("+-16 gauss");
+				break;
 		}
 
 		MAG.setIntThreshold(500);
@@ -205,17 +173,14 @@ void magSetup()
 /**
  * MPU6500 setup process
  */
-void mpuSetup()
-{
+void mpuSetup() {
 	int count = 0;
-	while (!MPU.init() && count < 10)
-	{
+	while (!MPU.init() && count < 10) {
 		PRINTLN("MPU6500 does not respond");
 		delay(100);
 		count += 1;
 	}
-	if (count < 10)
-	{
+	if (count < 10) {
 		PRINTLN("MPU6500 is connected");
 		MPU_C = true;
 		MPU.enableGyrDLPF();
@@ -227,18 +192,13 @@ void mpuSetup()
 		MPU.setAccDLPF(MPU6500_DLPF_6);
 		mpuCalib();
 	}
-	else if (count > 10)
-	{
-		PRINTLN("MPU6500 is NOT connected");
-		PRINTLN("I died");
-	}
+	else if (count > 10) { PRINTLN("MPU6500 is NOT connected"); PRINTLN("I died"); }
 }
 
 /**
  * MPU6500 auto calibration process
  */
-void mpuCalib()
-{
+void mpuCalib() {
 	PRINTLN("Position you MPU6500 flat and don't move it - calibrating...");
 	delay(1000);
 	MPU.autoOffsets();
@@ -248,8 +208,7 @@ void mpuCalib()
 /**
  * Function to get LIS3MDL (MAG) readings
  */
-void magRead()
-{
+void magRead() {
 	/* get a new sensor event, normalized to uTesla */
 	sensors_event_t event;
 	MAG.getEvent(&event);
@@ -266,18 +225,16 @@ void magRead()
 	magZ *= scale;
 
 	PRINTLN("\nMAG Reading:\nX: " + String(event.magnetic.x) + "\tY: " + String(event.magnetic.y) + "\tZ: " + String(event.magnetic.z) + " uTesla");
-	LOGLN(("\nMAG Reading:\nX: " + String(event.magnetic.x) + "\tY: " + String(event.magnetic.y) + "\tZ: " + String(event.magnetic.z) + " uTesla").c_str());
 	PRINTLN("offsetted X: " + String(magX) + "\toffsetted Y: " + String(magY) + "\toffsetted Z: " + String(magZ) + " uTesla");
 }
 
 /**
  * Function to get MPU6500 readings
  */
-void mpuRead()
-{
+void mpuRead() {
 	xyzFloat gValue = MPU.getGValues();
 	xyzFloat gyr = MPU.getGyrValues();
-	float temp = MPU.getTemperature();
+	float temperature = MPU.getTemperature();
 	float resultantG = MPU.getResultantG(gValue);
 
 	accelX = gValue.x; //- accelX_offsetGlobal;
@@ -286,71 +243,18 @@ void mpuRead()
 	gyroX = gyr.x; //- gyroX_offsetGlobal;
 	gyroY = gyr.y; //- gyroY_offsetGlobal;
 	gyroZ = gyr.z; //- gyroZ_offsetGlobal;
+	temp = temperature;
 
 	PRINTLN("\nMPU Reading:\nAcceleration in g (x,y,z):\t" + String(accelX) + "   " + String(accelY) + "   " + String(accelZ) + "\nResultant g: " + String(resultantG));
-	LOGLN(("\nMPU Reading:\nAcceleration in g (x,y,z):\t" + String(accelX) + "   " + String(accelY) + "   " + String(accelZ) + "\nResultant g: " + String(resultantG)).c_str());
-
 	PRINTLN("Gyroscope data in degrees/s:\t" + String(gyroX) + "   " + String(gyroY) + "   " + String(gyroZ));
-	LOGLN(("Gyroscope data in degrees/s:\t" + String(gyroX) + "   " + String(gyroY) + "   " + String(gyroZ)).c_str());
-
-	PRINTLN("Temperature in °C: " + String(temp));
-	LOGLN(("Temperature in °C: " + String(temp)).c_str());
-
+	PRINTLN("Temperature in °C: " + String(temperature));
 	PRINTLN("********************************************");
-	LOGLN("********************************************");
-}
-
-/**
- * IMU data to roll/pitch
- */
-void getRollPitch()
-{
-
-	PRINTLN("Raw AccelXYZ:\t" + String(accelX) + "\t" + String(accelY) + "\t" + String(accelZ));
-	LOGLN(("Raw AccelXYZ:\t" + String(accelX) + "\t" + String(accelY) + "\t" + String(accelZ)).c_str());
-
-	PRINTLN("Raw GyroXYZ:\t" + String(gyroX) + "\t" + String(gyroY) + "\t" + String(gyroZ));
-	LOGLN(("Raw GyroXYZ:\t" + String(gyroX) + "\t" + String(gyroY) + "\t" + String(gyroZ)).c_str());
-
-	roll = atan((double)accelY / hypotenuse((double)accelX, (double)accelZ)) * RAD_TO_DEG;
-	pitch = atan2((double)-accelX, (double)accelZ) * RAD_TO_DEG;
-
-	PRINTLN("  Roll: " + String(roll) + "\t  Pitch: " + String(pitch));
-	LOGLN(("  Roll: " + String(roll) + "\t  Pitch: " + String(pitch)).c_str());
-
-	// rollPitch[0] = roll;
-	// rollPitch[1] = pitch;
-}
-
-/**
- * Final Roll Pitch and Yaw calculation with Kalman Filter
-*/
-void getRollPitchYawK()
-{
-	double dt = (double)(micros() - timer) / 1000000;
-	timer = micros();
-	kalRoll = kalmanX.getAngle(roll, gyroX, dt);
-	kalPitch = kalmanY.getAngle(pitch, gyroY, dt);
-	getCorrectedYaw(kalRoll, kalPitch);
-	kalYaw = kalmanZ.getAngle(yaw, gyroZ, dt);
-	PRINTLN(" kalYaw: " + String(kalYaw));
-	// Serial.println(kalYaw);
-
-	yawDepth[0] = kalYaw;
-	
-	Serial.printf("kalRoll: %.7f, kalPitch: %.7f, kalYaw: %.7f\n", kalRoll, kalPitch, kalYaw);
-	//Serial.println("Orientation: " + String(kalRoll) + ", " + String(kalPitch) + ", " + String(kalYaw));
-
-
-	rollPitch[0] = kalRoll;
-	rollPitch[1] = kalPitch;
 }
 
 /**
  * Get yaw values by rotating the mag readings back into the reference frame of the accel/gyro, to remove the influence of roll on yaw.
  */
-void getCorrectedYaw(float r, float p)
-{	
+void getCorrectedYaw(float r, float p) {	
 	// convert roll and pitch to radians
 	r *= M_PI / 180.0f;
 	p *= M_PI / 180.0f;
@@ -381,17 +285,35 @@ void getCorrectedYaw(float r, float p)
 	// Serial.printf("dumbX:, %f, dumbY, %f, dumbZ, %f, beebeeyawyaw: %f\n", magX, magY, magZ, yaw);
 }
 
-void allRead()
-{
-	if (MAG_C)
-	{
-		magRead();
-		delay(READ_DELAY);
-	}
-	if (MPU_C)
-	{
-		mpuRead();
-		getRollPitchYawK();
-		delay(READ_DELAY);
-	}
+/**
+ * Final Roll Pitch and Yaw calculation with Kalman Filter
+*/
+void getRollPitchYawK() {
+	double dt = (double)(micros() - timer) / 1000000;
+	timer = micros();
+	kalRoll = kalmanX.getAngle(roll, gyroX, dt);
+	kalPitch = kalmanY.getAngle(pitch, gyroY, dt);
+	getCorrectedYaw(kalRoll, kalPitch);
+	kalYaw = kalmanZ.getAngle(yaw, gyroZ, dt);
+	PRINTLN(" kalYaw: " + String(kalYaw));
+	
+	// Serial.printf("kalRoll: %.7f, kalPitch: %.7f, kalYaw: %.7f\n", kalRoll, kalPitch, kalYaw);
+	// Serial.println("Orientation: " + String(kalRoll) + ", " + String(kalPitch) + ", " + String(kalYaw));
+}
+
+
+void allRead() {
+	if (MAG_C) { magRead(); delay(READ_DELAY); }
+	if (MPU_C) { mpuRead(); getRollPitchYawK(); delay(READ_DELAY); }
+}
+
+void writeSerial() {
+	Serial.print("Roll:");
+	Serial.println(kalRoll);
+	Serial.print("Pitch:");
+	Serial.println(kalPitch);
+	Serial.print("Yaw:");
+	Serial.println(kalYaw);
+	Serial.print("Temp:");
+	Serial.println(temp);
 }
