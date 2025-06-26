@@ -3,7 +3,7 @@ from tkinter import ttk
 from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
-from AprilTagDetection import AprilTagDetector # Importing the AprilTag detector class from the Backend module
+
 
 class Monitor:
 	def __init__(self, window):
@@ -22,11 +22,6 @@ class Monitor:
 		self.dict_cams = {}
 		self.cam_dropdown = None
 		self.cam_select = None
-  
-  		# AprilTag stuff
-		self.detected_message_label = None
-		self.detected_message_data = "Nothing"
-		self.apriltag_detector = AprilTagDetector()
 
 		# Control buttons
 		self.start = None
@@ -181,32 +176,43 @@ class Monitor:
 		# Detection Frame #
 		####################
 
-		# Frame to show AprilTag detected, and corresponding message
-		detection_frame = ttk.LabelFrame(master=self.window, text="Detected Tag")
+		# Frame for settings and detected message
+		detection_frame = ttk.LabelFrame(master=self.window, text="Settings")
 		# Grid the detection frame
 		detection_frame.grid(column=0, row=1, padx=10, pady=10, sticky="ew")
 		detection_frame.columnconfigure((0, 1), weight=1)
 		detection_frame.rowconfigure((0, 1), weight=1)
 
 		# Placeholder for live cropped view
-		camera_placeholder_label = ttk.Label(master=detection_frame, text="AprilTag detection view to be added")
-		camera_placeholder_label.grid(column=0, row=0, rowspan=3, padx=5, pady=5, sticky="ns")
+		# camera_placeholder_label = ttk.Label(master=detection_frame, text="AprilTag detection view to be added")
+		# camera_placeholder_label.grid(column=0, row=0, rowspan=3, padx=5, pady=5, sticky="ns")
 
 		detection_label = ttk.Label(master=detection_frame, text="Detected AprilTag message")
-		detection_label.grid(column=1, row=0, padx=5, pady=5, sticky="n")
+		detection_label.grid(column=0, row=0, padx=5, pady=5, sticky="n")
 
 		self.detected_message_label = ttk.Label(master=detection_frame, text=self.detected_message_data)
-		self.detected_message_label.grid(column=1, row=1, rowspan=2, padx=5, pady=5, sticky="ns")
+		self.detected_message_label.grid(column=0, row=1, rowspan=2, padx=5, pady=5, sticky="ns")
 
 		cam_select_label = ttk.Label(master=detection_frame, text="Select Camera")
-		cam_select_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
+		cam_select_label.grid(column=1, row=0, padx=5, pady=5, sticky="n")
 
 		list_cams = [str(key) + ": " + value for key, value in self.dict_cams.items()]
 		self.cam_dropdown = ttk.Combobox(master=detection_frame, values=list_cams)
 		self.cam_dropdown.current(0)
-		self.cam_dropdown.grid(column=2, row=1, padx=5, pady=5, sticky="n")
+		self.cam_dropdown.grid(column=1, row=1, padx=5, pady=5, sticky="n")
+
 		self.cam_select = ttk.Button(master=detection_frame, text="Confirm", command=self.cam_selection)
-		self.cam_select.grid(column=2, row=2, padx=5, pady=5, sticky="n")
+		self.cam_select.grid(column=1, row=2, padx=5, pady=5, sticky="n")
+
+		# Dropdown to select serial port
+		port_select_label = ttk.Label(master=detection_frame, text="Select Serial Port")
+		port_select_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
+		list_ports = SerialComms.list_ports()
+		self.port_dropdown = ttk.Combobox(master=detection_frame, values=list_ports)
+		self.port_dropdown.grid(column=2, row=1, padx=5, pady=5, sticky="n")
+
+		self.port_select = ttk.Button(master=detection_frame, text="Confirm")
+		self.port_select.grid(column=2, row=2, padx=5, pady=5, sticky="n")
 
 		####################
 		# Buttons Frame #
