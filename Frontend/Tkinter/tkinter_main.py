@@ -3,7 +3,8 @@ from tkinter import ttk
 from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
-
+from Backend.SerialPython import SerialComms
+from AprilTagDetection import AprilTagDetector # Importing the AprilTag detector class from the Backend module
 
 class Monitor:
 	def __init__(self, window):
@@ -22,6 +23,15 @@ class Monitor:
 		self.dict_cams = {}
 		self.cam_dropdown = None
 		self.cam_select = None
+  
+  		# Serial Port select stuff
+		self.port_dropdown = None
+		self.port_select = None
+  
+   		# AprilTag stuff
+		self.detected_message_label = None
+		self.detected_message_data = "Nothing"
+		self.apriltag_detector = AprilTagDetector()
 
 		# Control buttons
 		self.start = None
