@@ -376,9 +376,6 @@ void getCorrectedYaw(float r, float p)
 	float deltaY = magY - original_magY;
 
 	yaw = atan2(magX - deltaX, magY - deltaY) * 180/M_PI;
-
-	// Serial.printf("ori_magX: , %f, ori_magY: %f, ori_magZ: %f, polar_r_xz: %f, theta_xz_init: %f, polar_angle_after_roll: , %f, polar_r_yz: , %f, theta_yz_init: ,%f, polar_angle_after_pitch: , %f\n", original_magX, original_magY, original_magZ, polar_r_xz,theta_xz_init, polar_angle_after_roll, polar_r_yz, theta_yz_init, polar_angle_after_pitch);
-	// Serial.printf("dumbX:, %f, dumbY, %f, dumbZ, %f, beebeeyawyaw: %f\n", magX, magY, magZ, yaw);
 }
 
 void allRead()

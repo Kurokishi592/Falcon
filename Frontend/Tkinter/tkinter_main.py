@@ -3,15 +3,11 @@ from tkinter import ttk
 from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
-
+from AprilTagDetection import AprilTagDetector # Importing the AprilTag detector class from the Backend module
 
 class Monitor:
 	def __init__(self, window):
 		self.window = window
-
-		# AprilTag stuff
-		self.detected_message_label = None
-		self.detected_message_data = "Nothing"
 
 		# Camera instance stuff
 		self.vid = None
@@ -26,6 +22,11 @@ class Monitor:
 		self.dict_cams = {}
 		self.cam_dropdown = None
 		self.cam_select = None
+  
+  		# AprilTag stuff
+		self.detected_message_label = None
+		self.detected_message_data = "Nothing"
+		self.apriltag_detector = AprilTagDetector()
 
 		# Control buttons
 		self.start = None
@@ -101,12 +102,44 @@ class Monitor:
 
 	def cam_feed(self):
 		if self.vid is not None:
-			_, frame = self.vid.read()
+			ret, frame = self.vid.read()
+			if not ret:
+				self.cam_frame.after(10, self.cam_feed)
+				return
+
+			# can change such that we only apriltag detect on-demand using button
+			# but i put here for now
+   
+			# Process the frame for AprilTag detection
+			self.apriltag_detector.cx = self.width / 2
+			self.apriltag_detector.cy = self.height / 2	
+
+			# Run detection
+			detections = self.apriltag_detector.detect(frame)
+   
+			# Draw detections on the frame
+			for det in detections:
+				corners = np.int32(det.corners)
+				cv2.polylines(frame, [corners], isClosed=True, color=(0, 255, 0), thickness=2)
+				cv2.putText(frame, f"ID: {det.tag_id}", tuple(np.int32(det.center)),
+							cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+			# Display detections in label
+			if detections:
+				message = f"Detected {len(detections)} tag(s): " + ', '.join(str(d.tag_id) for d in detections)
+				self.detected_message_label.config(text=message)
+				print(message)
+			else:
+				self.detected_message_label.config(text="No tags detected")
+   
+			# Convert the frame to RGB format for Tkinter
+			# _, frame = self.vid.read()
 			raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 			conv_image = Image.fromarray(raw_image)
 			photo_image = ImageTk.PhotoImage(image=conv_image)
 			self.cam_frame.photo_image = photo_image
 			self.cam_frame.configure(image=photo_image)
+			
 			self.cam_frame.after(10, self.cam_feed)
 
 	def cam_selection(self):
