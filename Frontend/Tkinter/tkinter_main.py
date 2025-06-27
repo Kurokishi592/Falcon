@@ -163,6 +163,18 @@ class Monitor:
 		else:
 			self.cam_stop()
 
+	def port_selection(self):
+		use_port = self.port_dropdown.get()		# Returned in string form
+		print(use_port)
+		if use_port != "":
+			# Chop off the description
+			idx = use_port.find(" ")
+			use_port = use_port[:idx]
+			print(f'Selected serial port: {use_port}')
+			self.teensy_serial = SerialComms.connect_serial(use_port)
+		else:
+			print("No serial port selected")
+
 	def create_gui(self):
 		self.window.title("Falcon Parameter Screen")
 
@@ -224,7 +236,7 @@ class Monitor:
 		self.port_dropdown = ttk.Combobox(master=detection_frame, values=list_ports)
 		self.port_dropdown.grid(column=2, row=1, padx=5, pady=5, sticky="n")
 
-		self.port_select = ttk.Button(master=detection_frame, text="Confirm")
+		self.port_select = ttk.Button(master=detection_frame, text="Confirm", command=self.port_selection)
 		self.port_select.grid(column=2, row=2, padx=5, pady=5, sticky="n")
 
 		####################

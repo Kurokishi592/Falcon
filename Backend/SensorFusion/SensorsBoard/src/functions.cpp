@@ -3,7 +3,7 @@
 
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_AHRS.h>
+#include <MPU6500_WE.h>
 #include <new_kalman/new_kalman.h>
 #include <SPI.h>
 #include <string>
@@ -11,7 +11,7 @@
 Adafruit_LIS3MDL MAG;
 MPU6500_WE MPU = MPU6500_WE(&Wire2, MPU6500_ADDR);
 
-bool MAG_E = false, MPU_E = false;
+bool MAG_E = true, MPU_E = true;
 bool MAG_C = false, MPU_C = false;
 
 // MPU raw data
@@ -31,6 +31,11 @@ double magX = 9, magY = 9, magZ = 9;
 double yaw = 9;
 
 double temp = 9;
+
+void getRollPitch() {
+	roll = atan((double)accelY / hypotenuse((double)accelX, (double)accelZ)) * RAD_TO_DEG;
+	pitch = atan2((double)-accelX, (double)accelZ) * RAD_TO_DEG;
+}
 
 void sensorStart() {
 	if (MAG_E) { magSetup(); if (MAG_C) { PRINTLN("LIS3MDL setup done"); } }
@@ -166,8 +171,6 @@ void magSetup() {
 							false,				// don't latch
 							true);				// enabled!
 	}
-
-	filter.begin(10); // This is the getBetterYaw filter object begin func
 }
 
 /**
@@ -301,7 +304,7 @@ void getRollPitchYawK() {
 
 void allRead() {
 	if (MAG_C) { magRead(); delay(READ_DELAY); }
-	if (MPU_C) { mpuRead(); getRollPitchYawK(); delay(READ_DELAY); }
+	if (MPU_C) { mpuRead(); getRollPitch(); getRollPitchYawK(); delay(READ_DELAY); }
 }
 
 void writeSerial() {

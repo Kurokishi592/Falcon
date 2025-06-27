@@ -5,16 +5,16 @@
 
 
 void setup() {
-	Serial.begin(9600);
+	Serial.begin(115200);
 	Wire.begin();
 	Wire2.begin();
 	delay(1000);
 
-	delay(100);
+	sensorStart();
+
 	mpuRead();
 	getRollPitch();
 	kalmanSetup();
-	setupSW();
 }
 
 void loop() {

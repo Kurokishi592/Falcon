@@ -46,10 +46,14 @@ def read_serial(ser):
 			if line.startswith("Temp:"):
 				data = line.split(":")[1].strip()
 				data_dict["Temp"] = data
-		return data_dict
+	return data_dict
 
 
 if __name__ == '__main__':
 	ports_list = list_ports()
 	print(ports_list)
 	print(len(ports_list))
+	ser = connect_serial("COM9")
+	data = read_serial(ser)
+	ser.close()
+	print(data)

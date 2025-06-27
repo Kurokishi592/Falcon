@@ -3,7 +3,7 @@
 #endif
 
 #define READ_DELAY 0
-#define DELAY_BTWN_READ 0
+#define DELAY_BTWN_READ 500
 
 // MAG/BMP SPI
 #define CS_MAG 10
@@ -20,6 +20,9 @@
 // IMU Raw -> Roll/Pitch
 #define sqr(x) x * x
 #define hypotenuse(x, y) sqrt(sqr(x) + sqr(y))
+
+#define PRINT(x) 
+#define PRINTLN(x)
 
 // #define PRINT(x) Serial.print(x)
 // #define PRINTLN(x) Serial.println(x)
