@@ -10,7 +10,7 @@ cd Falcon
 ```
 Or alternatively, [download the ZIP file](https://github.com/Kurokishi592/Falcon/archive/refs/heads/main.zip), extract it, and move into under your local Desktop folder.
 
-## For 🐧 Linux/macOS/Raspberry Pi
+#### For 🐧 Linux/macOS/Raspberry Pi
 If you don't have git, install it using your system's package manager (e.g., sudo apt install git on Raspberry Pi/Linux).
 
 2. Run the following commands:
@@ -19,7 +19,7 @@ chmod +x setup_and_run.sh
 ./setup_and_run.sh
 ```
 
-## For 💻 Windows
+#### For 💻 Windows
 Download Git Bash if you do not have it installed: https://git-scm.com/downloads, click on "Windows", run the Installer `.exe` file and leave settings at their default values.
 
 2. Open Git Bash from the Start Menu
