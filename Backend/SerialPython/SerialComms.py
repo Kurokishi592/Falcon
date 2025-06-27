@@ -6,7 +6,7 @@ def dict_ports():
 	port_dict = {}
 	for comport in serial.tools.list_ports.comports():
 		desc = comport.description
-		idx = desc.find("(")			# Chop off the (COMx) at the end of the description
+		idx = desc.find("(COM")			# Chop off the (COMx) at the end of the description
 		desc = desc[:(idx - 1)]
 		port_dict[comport.device] = desc
 		print("{}: {}".format(comport.device, comport.description))

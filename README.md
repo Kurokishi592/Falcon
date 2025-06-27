@@ -18,6 +18,12 @@ cv2-enumerate-cameras is used for listing all the cameras present on the system.
 pip install cv2-enumerate-cameras
 ```
 
+3. [pupil-apriltags](https://pypi.org/project/pupil-apriltags/)
+pupil-apriltags is used for the AprilTag detection.
+```bash
+pip install pupil-apriltags
+```
+
 # Runtime Instructions
 To run the GUI, run the frontend Python file. This can be done through the terminal, after navigating to the folder that the file is located in:
 ```bash
