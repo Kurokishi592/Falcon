@@ -6,7 +6,7 @@ from pupil_apriltags import Detector # Importing the apriltag detector from pupi
 # ArUco is what jellyfish uses and it's supposed to be much simpler and better compatibility with opencv. 
 
 class AprilTagDetector:
-    def __init__(self, fx=800.0, fy=800.0, cx=300.0, cy=200.0, tag_size=0.16):
+    def __init__(self, fx=800.0, fy=800.0, cx=300.0, cy=200.0, tag_size=0.25):
        # Camera calibration parameters, to be replaced later using cv2.calibrateCamera()
         self.fx = fx                # Focal length in pixels (x axis
         self.fy = fy                # Focal length in pixels (y axis)   
@@ -15,7 +15,9 @@ class AprilTagDetector:
         self.tag_size = tag_size    # Size of the AprilTag in meters
 
         self.detector = Detector(
-            families="tagStandard41h12",  # we can use other families like tag36h11 or tag16h5 tagStandard41h12
+            families="tagCustom48h12",    
+            # for our recursive tag we must use this family
+            # other families like tag36h11 or tag16h5 or tagStandard41h12 have different varieties and purposes
             nthreads=4,                   # Number of threads to use for detection
             quad_decimate=1.0,            # Decimation factor for the quad detection, can try 2.0 for better performance at cost of accuracy
             quad_sigma=0.0,               # Sigma for the quad detection
