@@ -3,8 +3,8 @@
 echo "Setting up Falcon environment..."
 
 # Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 
 # Upgrade pip
 pip install --upgrade pip
