@@ -1,8 +1,26 @@
 # CP2106-Orbital-Falcon
-Falcon
+A vision-based dynamic landing system for drones (UAVs) on moving platforms autonomously, using real-time AprilTag detection and comes with a GUI. Ideal for Raspberry Pi and compatible with Linux, macOS, and Windows.
+
+# Setup Instructions
+1. Download Git Bash if you do not have it installed: https://git-scm.com/downloads
+
+2. Download the zip file https://github.com/Kurokishi592/Falcon/archive/refs/heads/main.zip and save it under your local Desktop
+
+3. Open Git Bash and go to the "Falcon" directory under desktop by running:
+```bash
+cd ~/desktop/Falcon
+```
+4. Run the following command:
+```bash
+./setup_and_run.sh
+```
+
+5. Enjoy!
+
 
 # Installation Instructions
 The [GUI](https://github.com/Kurokishi592/Falcon/blob/main/Frontend/Tkinter/tkinter_main.py) relies on Python's Tkinter dependency. Tkinter comes preinstalled with any [Python 3](https://www.python.org/downloads/) version.
+
 Other dependencies include:
 1. [OpenCV](https://opencv.org/) 
 
