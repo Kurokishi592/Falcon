@@ -1,21 +1,49 @@
 # CP2106-Orbital-Falcon
 A vision-based dynamic landing system for drones (UAVs) on moving platforms autonomously, using real-time AprilTag detection and comes with a GUI. Ideal for Raspberry Pi and compatible with Linux, macOS, and Windows.
 
-# Setup Instructions
-1. Download Git Bash if you do not have it installed: https://git-scm.com/downloads
+# Setup Instructions 
+1. Download the Project
+```bash
+cd ~/Desktop
+git clone https//github.com/Kurokishi592/Falcon.git
+cd Falcon
+```
+Or alternatively, [download the ZIP file](https://github.com/Kurokishi592/Falcon/archive/refs/heads/main.zip), extract it, and move into under your local Desktop folder.
 
-2. Download the zip file https://github.com/Kurokishi592/Falcon/archive/refs/heads/main.zip and save it under your local Desktop
+## For 🐧 Linux/macOS/Raspberry Pi
+If you don't have git, install it using your system's package manager (e.g., sudo apt install git on Raspberry Pi/Linux).
 
-3. Open Git Bash and go to the "Falcon" directory under desktop by running:
+2. Run the following commands:
+``` bash
+chmod +x setup_and_run.sh
+./setup_and_run.sh
+```
+
+## For 💻 Windows
+Download Git Bash if you do not have it installed: https://git-scm.com/downloads, click on "Windows", run the Installer `.exe` file and leave settings at their default values.
+
+2. Open Git Bash from the Start Menu
+
+3. Go to the "Falcon" directory by running:
 ```bash
 cd ~/desktop/Falcon
 ```
-4. Run the following command:
+
+4. Run the following command to run Falcon:
 ```bash
 ./setup_and_run.sh
 ```
 
-5. Enjoy!
+This will:
+- Create a Python virtual environment
+- Install all required packages
+- Launch the GUI application
+
+Done!
+The AprilTag detection window should open with your webcam feed and a GUI.
+
+
+---------------------------------------------------
 
 
 # Installation Instructions
