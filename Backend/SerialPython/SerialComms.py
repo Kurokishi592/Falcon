@@ -28,12 +28,11 @@ def connect_serial(serial_port):
 
 
 def read_serial(ser):
-	data_dict = {}
+	data_dict = {"Roll": 0, "Pitch": 0, "Yaw": 0, "Temp": 0}
 	for i in range(4):
 		line = ser.readline()
 		if line:
 			line = line.decode('utf-8').strip()
-			print(line)
 			if line.startswith("Roll:"):
 				data = line.split(":")[1].strip()
 				data_dict["Roll"] = data
@@ -53,7 +52,7 @@ if __name__ == '__main__':
 	ports_list = list_ports()
 	print(ports_list)
 	print(len(ports_list))
-	ser = connect_serial("COM9")
-	data = read_serial(ser)
-	ser.close()
-	print(data)
+	ser1 = connect_serial("COM9")
+	data1 = read_serial(ser1)
+	ser1.close()
+	print(data1)

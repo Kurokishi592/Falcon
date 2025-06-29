@@ -3,11 +3,12 @@ from tkinter import ttk
 from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
-import sys, os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
+# import sys, os
+# sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
-from Backend.AprilTagDetection import AprilTagDetector # Importing the AprilTag detector class from the Backend module
+from Backend.AprilTagDetection import AprilTagDetector 	# Importing the AprilTag detector class from the Backend module
 import numpy as np
+
 
 class Monitor:
 	def __init__(self, window):
@@ -26,12 +27,15 @@ class Monitor:
 		self.dict_cams = {}
 		self.cam_dropdown = None
 		self.cam_select = None
-  
-  		# Serial Port select stuff
+
+		# Serial Port select stuff
 		self.port_dropdown = None
 		self.port_select = None
-  
-   		# AprilTag stuff
+		self.port_refresh = None
+		self.teensy_serial = None
+		self.imu_data = {}
+
+		# AprilTag stuff
 		self.detected_message_label = None
 		self.detected_message_data = "Nothing"
 		self.apriltag_detector = AprilTagDetector()
@@ -69,16 +73,6 @@ class Monitor:
 		self.batt_vol_label = None
 		self.int_temp_label = None
 
-		# Parameter text
-		self.roll_data = str(0)
-		self.pitch_data = str(0)
-		self.yaw_data = str(0)
-		self.cam_fps_data = str(0)
-		self.wind_spd_data = str(0)
-		self.wind_dir_data = str(0)
-		self.batt_vol_data = str(0)
-		self.int_temp_data = str(0)
-
 		self.find_cams()
 		if self.num_cams == 1:
 			self.cam_start(list(self.dict_cams)[0])
@@ -115,16 +109,13 @@ class Monitor:
 				self.cam_frame.after(10, self.cam_feed)
 				return
 
-			# can change such that we only apriltag detect on-demand using button
-			# but i put here for now
-   
 			# Process the frame for AprilTag detection
 			self.apriltag_detector.cx = self.width / 2
 			self.apriltag_detector.cy = self.height / 2	
 
 			# Run detection
 			detections = self.apriltag_detector.detect(frame)
-   
+
 			# Draw detections on the frame
 			for det in detections:
 				corners = np.int32(det.corners)
@@ -139,7 +130,7 @@ class Monitor:
 				print(message)
 			else:
 				self.detected_message_label.config(text="No tags detected")
-   
+
 			# Convert the frame to RGB format for Tkinter
 			# _, frame = self.vid.read()
 			raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -172,8 +163,24 @@ class Monitor:
 			use_port = use_port[:idx]
 			print(f'Selected serial port: {use_port}')
 			self.teensy_serial = SerialComms.connect_serial(use_port)
+			self.get_data()
 		else:
 			print("No serial port selected")
+
+	def refresh_ports(self):
+		self.port_dropdown["values"] = SerialComms.list_ports()
+
+	def get_data(self):
+		# Get data from IMU, in dictionary form
+		self.imu_data = SerialComms.read_serial(self.teensy_serial)
+		# Assign data from the dictionary to the labels
+		self.roll_label.config(text=self.imu_data["Roll"] + "°")
+		self.pitch_label.config(text=self.imu_data["Pitch"] + "°")
+		self.yaw_label.config(text=self.imu_data["Yaw"] + "°")
+		self.int_temp_label.config(text=self.imu_data["Temp"] + "°C")
+
+		# Can choose any label, check every 1s
+		self.roll_label.after(1000, self.get_data)
 
 	def create_gui(self):
 		self.window.title("Falcon Parameter Screen")
@@ -236,8 +243,15 @@ class Monitor:
 		self.port_dropdown = ttk.Combobox(master=detection_frame, values=list_ports)
 		self.port_dropdown.grid(column=2, row=1, padx=5, pady=5, sticky="n")
 
-		self.port_select = ttk.Button(master=detection_frame, text="Confirm", command=self.port_selection)
-		self.port_select.grid(column=2, row=2, padx=5, pady=5, sticky="n")
+		# Serial port button frame
+		serial_port_button_frame = ttk.Frame(master=detection_frame)
+		serial_port_button_frame.grid(column=2, row=2, padx=5, pady=5, sticky="n")
+
+		self.port_refresh = ttk.Button(master=serial_port_button_frame, text="Refresh", command=self.refresh_ports)
+		self.port_refresh.grid(column=0, row=0, padx=5, pady=5, sticky="n")
+
+		self.port_select = ttk.Button(master=serial_port_button_frame, text="Confirm", command=self.port_selection)
+		self.port_select.grid(column=1, row=0, padx=5, pady=5, sticky="n")
 
 		####################
 		# Buttons Frame #
@@ -373,14 +387,14 @@ class Monitor:
 		s_int_temp_label.grid(column=3, row=2, padx=5, pady=5, sticky="n")
 
 		# Add all associated sensor data labels
-		self.roll_label = ttk.Label(master=sensor_frame, text=self.roll_data + "°")
-		self.pitch_label = ttk.Label(master=sensor_frame, text=self.pitch_data + "°")
-		self.yaw_label = ttk.Label(master=sensor_frame, text=self.yaw_data + "°")
-		self.cam_fps_label = ttk.Label(master=sensor_frame, text=self.cam_fps_data + "fps")
-		self.wind_spd_label = ttk.Label(master=sensor_frame, text=self.wind_spd_data + "m/s")
-		self.wind_dir_label = ttk.Label(master=sensor_frame, text=self.wind_dir_data + "°")
-		self.batt_vol_label = ttk.Label(master=sensor_frame, text=self.batt_vol_data + "V")
-		self.int_temp_label = ttk.Label(master=sensor_frame, text=self.int_temp_data + "°C")
+		self.roll_label = ttk.Label(master=sensor_frame, text="0°")
+		self.pitch_label = ttk.Label(master=sensor_frame, text="0°")
+		self.yaw_label = ttk.Label(master=sensor_frame, text="0°")
+		self.cam_fps_label = ttk.Label(master=sensor_frame, text="0fps")
+		self.wind_spd_label = ttk.Label(master=sensor_frame, text="0m/s")
+		self.wind_dir_label = ttk.Label(master=sensor_frame, text="0°")
+		self.batt_vol_label = ttk.Label(master=sensor_frame, text="0V")
+		self.int_temp_label = ttk.Label(master=sensor_frame, text="0°C")
 
 		self.roll_label.grid(column=0, row=1, padx=5, pady=5, sticky="n")
 		self.pitch_label.grid(column=1, row=1, padx=5, pady=5, sticky="n")
