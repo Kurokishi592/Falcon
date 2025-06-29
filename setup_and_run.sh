@@ -7,7 +7,7 @@ python -m venv .venv
 source .venv/Scripts/activate
 
 # Upgrade pip
-python.exe -m pip pip install --upgrade pip
+python.exe -m pip install --upgrade pip
 
 # Install required packages
 pip install opencv-python cv2-enumerate-cameras pupil-apriltags Pillow pyserial
