@@ -3,6 +3,22 @@ import numpy as np
 import time
 from AprilTagDetection import AprilTagDetector
 
+"""
+runs the control logic for uav after detection
+main logic:
+Assume the drone is stationary, given the tag's relative velocity from it, 
+cancel out the tag's motion by commanding the drone to move in the opposite direction.
+If tag is moving → v_relative = tag velocity in camera frame
+If drone is moving → v_relative = negative drone velocity in camera frame
+If both are moving → v_relative = (tag velocity - drone velocity) in camera frame
+
+To approach and land, the drone will need to:
+1. Cancel the tag's velocity
+2. Apply correction based on position error, use a PID controller to adjust the drone's velocity
+
+The desired velocity should be part of the result to be sent to GUI
+"""
+
 class FalconController:
     def __init__(self, camera_id = 0):
         self.cap = cv2.VideoCapture(camera_id)
@@ -29,6 +45,9 @@ class FalconController:
         - desired_velocity: np.array ([vx, vy, vz]) representing the desired velocity of the drone (m/s)
         """
         
+        tag_pose =np.array(tag_pose)
+        tag_velocity = np.array(tag_velocity)
+        
         # use PID controller, here we only use P controller for now
         position_error = tag_pose - self.current_uav_position
         desired_velocity = tag_velocity + self.kp * position_error
@@ -37,15 +56,16 @@ class FalconController:
         speed = np.linalg.norm(desired_velocity)
         if speed > self.max_velocity:
             desired_velocity = (desired_velocity / speed) * self.max_velocity
-        return desired_velocity
+        return desired_velocity.tolist()  # Convert to list for compatibility with GUI
     
     def run_once(self):
         """
-        Capture a frame from the camera, detect AprilTags, compute desired velocity, and return the results.
+        Capture a frame from the camera, detect AprilTags, compute desired velocity.
+        Return a list of tag detection results with added desired velocity.
         """
         ret, frame = self.cap.read()
         if not ret:
-            print("Failed to run")
+            print("Failed to capture frame")
             return []
         
         detections = self.detector.detect(frame)
@@ -56,7 +76,6 @@ class FalconController:
             tag_velocity = detection['velocity']
             
             desired_velocity = self.compute_desired_velocity(tag_pose, tag_velocity)
-            
             detection["desired_velocity"] = desired_velocity
             results.append(detection)
         
