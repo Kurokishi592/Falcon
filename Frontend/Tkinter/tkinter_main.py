@@ -8,6 +8,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
 from Backend.AprilTagDetection import AprilTagDetector
+from Backend.Controls import FalconController
 import numpy as np
 
 
@@ -44,6 +45,7 @@ class Monitor:
 
 		# Control buttons
 		self.start = None
+		self.run_control_logic = False
 		self.failsafe = None
 
 		# PID stuff
@@ -63,6 +65,11 @@ class Monitor:
 		self.x_data = str(0)
 		self.y_data = str(0)
 		self.z_data = str(0)
+  
+		self.last_detection_time = None
+		self.last_detection_centers = {}
+		self.desired_velocity = (0, 0, 0)
+
 
 		# Parameter labels
 		self.roll_label = None
@@ -131,6 +138,7 @@ class Monitor:
 				print(message)
 			else:
 				self.detected_message_label.config(text="No tags detected")
+    
 
 			# Convert the frame to RGB format for Tkinter
 			# _, frame = self.vid.read()
@@ -187,6 +195,10 @@ class Monitor:
 
 		# Can choose any label, check every 1s
 		self.roll_label.after(1000, self.get_data)
+  
+	def start_button_pressed(self):
+		self.run_control_logic = True  # This flag lets update loop know to compute + show velocity
+		print("Start button pressed. Control logic and velocity display started.")
 
 	def create_gui(self):
 		self.window.title("Falcon Parameter Screen")
