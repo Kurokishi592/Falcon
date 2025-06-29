@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
-from Backend.AprilTagDetection import AprilTagDetector 	# Importing the AprilTag detector class from the Backend module
+from Backend.AprilTagDetection import AprilTagDetector
 import numpy as np
 
 
