@@ -27,6 +27,7 @@ class Monitor:
 		self.dict_cams = {}
 		self.cam_dropdown = None
 		self.cam_select = None
+		self.cam_refresh = None
 
 		# Serial Port select stuff
 		self.port_dropdown = None
@@ -154,6 +155,11 @@ class Monitor:
 		else:
 			self.cam_stop()
 
+	def refresh_cam(self):
+		self.find_cams()
+		list_cams = [str(key) + ": " + value for key, value in self.dict_cams.items()]
+		self.cam_dropdown["values"] = list_cams
+
 	def port_selection(self):
 		use_port = self.port_dropdown.get()		# Returned in string form
 		print(use_port)
@@ -233,8 +239,14 @@ class Monitor:
 		self.cam_dropdown.current(0)
 		self.cam_dropdown.grid(column=1, row=1, padx=5, pady=5, sticky="n")
 
-		self.cam_select = ttk.Button(master=detection_frame, text="Confirm", command=self.cam_selection)
-		self.cam_select.grid(column=1, row=2, padx=5, pady=5, sticky="n")
+		cam_button_frame = ttk.Frame(master=detection_frame)
+		cam_button_frame.grid(column=1, row=2, padx=5, pady=5, sticky="n")
+
+		self.cam_refresh = ttk.Button(master=cam_button_frame, text="Refresh", command=self.refresh_cam)
+		self.cam_refresh.grid(column=0, row=0, padx=5, pady=5, sticky="n")
+
+		self.cam_select = ttk.Button(master=cam_button_frame, text="Confirm", command=self.cam_selection)
+		self.cam_select.grid(column=1, row=0, padx=5, pady=5, sticky="n")
 
 		# Dropdown to select serial port
 		port_select_label = ttk.Label(master=detection_frame, text="Select Serial Port")
