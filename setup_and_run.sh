@@ -3,11 +3,11 @@
 echo "Setting up Falcon environment..."
 
 # Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
+python -m venv .venv
+source .venv/Scripts/activate
 
 # Upgrade pip
-pip install --upgrade pip
+python.exe -m pip pip install --upgrade pip
 
 # Install required packages
 pip install opencv-python cv2-enumerate-cameras pupil-apriltags Pillow pyserial
