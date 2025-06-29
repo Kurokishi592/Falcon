@@ -3,8 +3,9 @@ from tkinter import ttk
 from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
-# import sys, os
-# sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
 from Backend.AprilTagDetection import AprilTagDetector 	# Importing the AprilTag detector class from the Backend module
 import numpy as np
