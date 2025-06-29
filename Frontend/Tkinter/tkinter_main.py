@@ -44,7 +44,6 @@ class Monitor:
 
 		# Control buttons
 		self.start = None
-		self.stop = None
 		self.failsafe = None
 
 		# PID stuff
@@ -280,11 +279,9 @@ class Monitor:
 		button_style = ttk.Style()
 		button_style.configure("my.TButton", font=14)
 		self.start = ttk.Button(master=button_frame, style="my.TButton", text="Start")
-		self.stop = ttk.Button(master=button_frame, style="my.TButton", text="Stop")
 		self.failsafe = ttk.Button(master=button_frame, style="my.TButton", text="Failsafe")
 		self.start.grid(column=0, row=0, padx=10, pady=10, ipadx=20, ipady=20, sticky="n")
-		self.stop.grid(column=1, row=0, padx=10, pady=10, ipadx=20, ipady=20, sticky="n")
-		self.failsafe.grid(column=2, row=0, padx=10, pady=10, ipadx=20, ipady=20, sticky="n")
+		self.failsafe.grid(column=1, row=0, padx=10, pady=10, ipadx=20, ipady=20, sticky="n")
 
 		####################
 		# Parameter Frame #

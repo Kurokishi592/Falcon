@@ -21,7 +21,7 @@ class AprilTagDetector:
             # other families like tag36h11 or tag16h5 or tagStandard41h12 have different varieties and purposes
             nthreads=4,                   # Number of threads to use for detection
             quad_decimate=1.0,            # Decimation factor for the quad detection, can try 2.0 for better performance at cost of accuracy
-            quad_sigma=0.0,               # Sigma for the quad detection
+            quad_sigma=1.0,               # Sigma for the quad detection
             refine_edges=True,            # Whether to refine the edges of the detected tags
             decode_sharpening=0.25,       # Sharpening factor for decoding
             debug=False,             
