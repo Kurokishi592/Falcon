@@ -47,10 +47,22 @@ class Monitor:
 		self.failsafe = None
 
 		# PID stuff
-		self.param_p = None
-		self.param_i = None
-		self.param_d = None
+		self.param_p_f = None
+		self.param_i_f = None
+		self.param_d_f = None
 		self.param_pid_button = None
+		self.param_pid_pass_fail = None
+		self.param_p = 0
+		self.param_i = 0
+		self.param_d = 0
+
+		# +/- buttons
+		self.param_p_p = None
+		self.param_p_m = None
+		self.param_i_p = None
+		self.param_i_m = None
+		self.param_d_p = None
+		self.param_d_m = None
 
 		# Marker loss timeout stuff
 		self.timeout = None
@@ -169,14 +181,14 @@ class Monitor:
 			use_port = use_port[:idx]
 			print(f'Selected serial port: {use_port}')
 			self.teensy_serial = SerialComms.connect_serial(use_port)
-			self.get_data()
+			self.get_serial_data()
 		else:
 			print("No serial port selected")
 
 	def refresh_ports(self):
 		self.port_dropdown["values"] = SerialComms.list_ports()
 
-	def get_data(self):
+	def get_serial_data(self):
 		# Get data from IMU, in dictionary form
 		self.imu_data = SerialComms.read_serial(self.teensy_serial)
 		# Assign data from the dictionary to the labels
@@ -186,7 +198,82 @@ class Monitor:
 		self.int_temp_label.config(text=self.imu_data["Temp"] + "°C")
 
 		# Can choose any label, check every 1s
-		self.roll_label.after(1000, self.get_data)
+		self.roll_label.after(1000, self.get_serial_data)
+
+	def get_pid_params(self):
+		p = self.param_p_f.get()
+		i = self.param_i_f.get()
+		d = self.param_d_f.get()
+		print(f"P {p}, I {i}, D {d}")
+		try:
+			if int(p) >= 0 and int(i) >= 0 and int(d) >= 0:
+				self.param_p = p
+				self.param_i = i
+				self.param_d = d
+				self.param_pid_pass_fail.config(text="Success!")
+				print("Successfully uploaded PID values")
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def pid_param_p_plus(self):
+		curr = self.param_p_f.get()
+		try:
+			if curr != "":
+				self.param_pid_pass_fail.config(text="")
+				self.param_p_f.delete(0, "end")
+				self.param_p_f.insert(0, str(int(curr) + 1))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def pid_param_p_minus(self):
+		curr = self.param_p_f.get()
+		try:
+			if curr != "" and int(curr) > 0:
+				self.param_pid_pass_fail.config(text="")
+				self.param_p_f.delete(0, "end")
+				self.param_p_f.insert(0, str(int(curr) - 1))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def pid_param_i_plus(self):
+		curr = self.param_i_f.get()
+		try:
+			if curr != "":
+				self.param_pid_pass_fail.config(text="")
+				self.param_i_f.delete(0, "end")
+				self.param_i_f.insert(0, str(int(curr) + 1))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def pid_param_i_minus(self):
+		curr = self.param_i_f.get()
+		try:
+			if curr != "" and int(curr) > 0:
+				self.param_pid_pass_fail.config(text="")
+				self.param_i_f.delete(0, "end")
+				self.param_i_f.insert(0, str(int(curr) - 1))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def pid_param_d_plus(self):
+		curr = self.param_d_f.get()
+		try:
+			if curr != "":
+				self.param_pid_pass_fail.config(text="")
+				self.param_d_f.delete(0, "end")
+				self.param_d_f.insert(0, str(int(curr) + 1))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def pid_param_d_minus(self):
+		curr = self.param_d_f.get()
+		try:
+			if curr != "" and int(curr) > 0:
+				self.param_pid_pass_fail.config(text="")
+				self.param_d_f.delete(0, "end")
+				self.param_d_f.insert(0, str(int(curr) - 1))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def create_gui(self):
 		self.window.title("Falcon Parameter Screen")
@@ -272,7 +359,7 @@ class Monitor:
 		# Frame to show the Buttons
 		button_frame = ttk.LabelFrame(master=self.window, text="Buttons")
 		button_frame.grid(column=0, row=2, padx=10, pady=10, sticky="ew")
-		button_frame.columnconfigure((0, 1, 2), weight=1)
+		button_frame.columnconfigure((0, 1), weight=1)
 		button_frame.rowconfigure(0, weight=1)
 
 		# Set and place buttons
@@ -301,30 +388,45 @@ class Monitor:
 		# PID frame
 		pid_frame = ttk.LabelFrame(master=param_frame, text="PID")
 		pid_frame.grid(column=0, row=0, padx=10, pady=10, sticky="nsew")
-		pid_frame.columnconfigure((0, 1), weight=1)
+		pid_frame.columnconfigure((0, 1, 2, 3), weight=1)
 		pid_frame.rowconfigure((0, 1, 2, 3), weight=1)
 
 		# PID P
 		pid_p_label = ttk.Label(master=pid_frame, text="Proportional")			# Make new label
 		pid_p_label.grid(column=0, row=0, padx=10, pady=10, sticky="nw")		# Add label to PID frame
-		self.param_p = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
-		self.param_p.grid(column=1, row=0, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
+		self.param_p_m = ttk.Button(master=pid_frame, text="-", command=self.pid_param_p_minus)
+		self.param_p_m.grid(column=1, row=0, padx=2, pady=2, sticky="ns")
+		self.param_p_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
+		self.param_p_f.grid(column=2, row=0, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
+		self.param_p_p = ttk.Button(master=pid_frame, text="+", command=self.pid_param_p_plus)
+		self.param_p_p.grid(column=3, row=0, padx=2, pady=2, sticky="ns")
 
 		# Add PID I label
 		pid_i_label = ttk.Label(master=pid_frame, text="Integral")				# Make new label
 		pid_i_label.grid(column=0, row=1, padx=10, pady=10, sticky="nw")		# Add label to PID frame
-		self.param_i = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
-		self.param_i.grid(column=1, row=1, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
+		self.param_i_m = ttk.Button(master=pid_frame, text="-", command=self.pid_param_i_minus)
+		self.param_i_m.grid(column=1, row=1, padx=2, pady=2, sticky="ns")
+		self.param_i_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
+		self.param_i_f.grid(column=2, row=1, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
+		self.param_i_p = ttk.Button(master=pid_frame, text="+", command=self.pid_param_i_plus)
+		self.param_i_p.grid(column=3, row=1, padx=2, pady=2, sticky="ns")
 
 		# Add PID D label
 		pid_d_label = ttk.Label(master=pid_frame, text="Derivative")			# Make new label
 		pid_d_label.grid(column=0, row=2, padx=10, pady=10, sticky="nw")		# Add label to PID frame
-		self.param_d = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
-		self.param_d.grid(column=1, row=2, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
+		self.param_d_m = ttk.Button(master=pid_frame, text="-", command=self.pid_param_d_minus)
+		self.param_d_m.grid(column=1, row=2, padx=2, pady=2, sticky="ns")
+		self.param_d_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
+		self.param_d_f.grid(column=2, row=2, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
+		self.param_d_p = ttk.Button(master=pid_frame, text="+", command=self.pid_param_d_plus)
+		self.param_d_p.grid(column=3, row=2, padx=2, pady=2, sticky="ns")
 
 		# Add Submit button
-		self.param_pid_button = ttk.Button(master=pid_frame, text="Upload PID Params")
-		self.param_pid_button.grid(column=0, row=3, columnspan=2, padx=10, pady=10, ipadx=15, ipady=15,  sticky="n")
+		self.param_pid_button = ttk.Button(master=pid_frame, text="Upload PID Params", command=self.get_pid_params)
+		self.param_pid_button.grid(column=0, row=3, columnspan=3, padx=10, pady=10, ipadx=15, ipady=15, sticky="n")
+
+		self.param_pid_pass_fail = ttk.Label(master=pid_frame, text="")
+		self.param_pid_pass_fail.grid(column=3, row=3, padx=10, pady=10, sticky="ns")
 
 		####################
 		# Timeout Frame #
