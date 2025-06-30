@@ -1,11 +1,6 @@
 # CP2106-Orbital-Falcon
 A vision-based dynamic landing system for drones (UAVs) on moving platforms autonomously, using real-time AprilTag detection and comes with a GUI. Ideal for Raspberry Pi and compatible with Linux, macOS, and Windows.
 
-Download the pdf "recursive tag id 0 1 2" to test the apriltag detection yourself! After starting the camera feed on FALCON, display the tag in front of your feed (perhaps using your phone screen) and FALCON will reflect an overlay to show detection. 
-- Ensure that the tag is fully displayed on your separate screen
-- Zoom in on the pdf. The recursive tag, as the name suggests, has tags placed within tags
-- It is robust to rotation of up to 80 degrees, try it yourself. 
-
 # FALCON Setup Instructions 
 1. Download the Project
 ```bash
@@ -44,8 +39,20 @@ This will:
 - Install all required packages
 - Launch the GUI application
 
+# FALCON Simple User Test
+With the FALCON GUI opened, start the camera feed:
+1. Under "Select Camera" dropdown options, select the camera that starts with '700', this should start your webcam. (Or any other usb camera you can use)
+
+2. Open the pdf "recursive tag id 0 1 2" to test the apriltag detection using another device. As long as the tag is displayed on a separate screen any method will do. You can just open using your phone.
+
+3. Display the tag in front of your webcam/camera and FALCON will reflect an overlay to show detection. 
+
+- Ensure that the tag is fully displayed on your separate screen
+- Zoom in on the pdf. The recursive tag, as the name suggests, has tags placed within tags
+- It is robust to rotation of up to 80 degrees, and far or near, try it yourself
+
 Done!
-The AprilTag detection window should open with your webcam feed and a GUI.
+FALCON is now opened with a GUI and your selected camera feed. Feel free to play around with the other features too!
 
 
 
