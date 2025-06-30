@@ -206,7 +206,7 @@ class Monitor:
 		d = self.param_d_f.get()
 		print(f"P {p}, I {i}, D {d}")
 		try:
-			if int(p) >= 0 and int(i) >= 0 and int(d) >= 0:
+			if float(p) >= 0 and float(i) >= 0 and float(d) >= 0:
 				self.param_p = p
 				self.param_i = i
 				self.param_d = d
@@ -221,17 +221,17 @@ class Monitor:
 			if curr != "":
 				self.param_pid_pass_fail.config(text="")
 				self.param_p_f.delete(0, "end")
-				self.param_p_f.insert(0, str(int(curr) + 1))
+				self.param_p_f.insert(0, str(round(float(curr) + 0.1, 3)))
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def pid_param_p_minus(self):
 		curr = self.param_p_f.get()
 		try:
-			if curr != "" and int(curr) > 0:
+			if curr != "" and float(curr) > 0:
 				self.param_pid_pass_fail.config(text="")
 				self.param_p_f.delete(0, "end")
-				self.param_p_f.insert(0, str(int(curr) - 1))
+				self.param_p_f.insert(0, str(round(float(curr) - 0.1, 3)))
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
@@ -241,17 +241,17 @@ class Monitor:
 			if curr != "":
 				self.param_pid_pass_fail.config(text="")
 				self.param_i_f.delete(0, "end")
-				self.param_i_f.insert(0, str(int(curr) + 1))
+				self.param_i_f.insert(0, str(round(float(curr) + 0.001, 3)))
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def pid_param_i_minus(self):
 		curr = self.param_i_f.get()
 		try:
-			if curr != "" and int(curr) > 0:
+			if curr != "" and float(curr) > 0:
 				self.param_pid_pass_fail.config(text="")
 				self.param_i_f.delete(0, "end")
-				self.param_i_f.insert(0, str(int(curr) - 1))
+				self.param_i_f.insert(0, str(round(float(curr) - 0.001, 3)))
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
@@ -261,7 +261,7 @@ class Monitor:
 			if curr != "":
 				self.param_pid_pass_fail.config(text="")
 				self.param_d_f.delete(0, "end")
-				self.param_d_f.insert(0, str(int(curr) + 1))
+				self.param_d_f.insert(0, str(round(float(curr) + 0.01, 3)))
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
@@ -271,7 +271,7 @@ class Monitor:
 			if curr != "" and int(curr) > 0:
 				self.param_pid_pass_fail.config(text="")
 				self.param_d_f.delete(0, "end")
-				self.param_d_f.insert(0, str(int(curr) - 1))
+				self.param_d_f.insert(0, str(round(float(curr) - 0.01, 3)))
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
@@ -394,32 +394,32 @@ class Monitor:
 		# PID P
 		pid_p_label = ttk.Label(master=pid_frame, text="Proportional")			# Make new label
 		pid_p_label.grid(column=0, row=0, padx=10, pady=10, sticky="nw")		# Add label to PID frame
-		self.param_p_m = ttk.Button(master=pid_frame, text="-", command=self.pid_param_p_minus)
-		self.param_p_m.grid(column=1, row=0, padx=2, pady=2, sticky="ns")
+		self.param_p_m = ttk.Button(master=pid_frame, text="-0.1", command=self.pid_param_p_minus)
+		self.param_p_m.grid(column=1, row=0, padx=2, pady=2, sticky="e")
 		self.param_p_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
 		self.param_p_f.grid(column=2, row=0, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
-		self.param_p_p = ttk.Button(master=pid_frame, text="+", command=self.pid_param_p_plus)
-		self.param_p_p.grid(column=3, row=0, padx=2, pady=2, sticky="ns")
+		self.param_p_p = ttk.Button(master=pid_frame, text="+0.1", command=self.pid_param_p_plus)
+		self.param_p_p.grid(column=3, row=0, padx=2, pady=2, sticky="w")
 
 		# Add PID I label
 		pid_i_label = ttk.Label(master=pid_frame, text="Integral")				# Make new label
 		pid_i_label.grid(column=0, row=1, padx=10, pady=10, sticky="nw")		# Add label to PID frame
-		self.param_i_m = ttk.Button(master=pid_frame, text="-", command=self.pid_param_i_minus)
-		self.param_i_m.grid(column=1, row=1, padx=2, pady=2, sticky="ns")
+		self.param_i_m = ttk.Button(master=pid_frame, text="-0.001", command=self.pid_param_i_minus)
+		self.param_i_m.grid(column=1, row=1, padx=2, pady=2, sticky="e")
 		self.param_i_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
 		self.param_i_f.grid(column=2, row=1, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
-		self.param_i_p = ttk.Button(master=pid_frame, text="+", command=self.pid_param_i_plus)
-		self.param_i_p.grid(column=3, row=1, padx=2, pady=2, sticky="ns")
+		self.param_i_p = ttk.Button(master=pid_frame, text="+0.001", command=self.pid_param_i_plus)
+		self.param_i_p.grid(column=3, row=1, padx=2, pady=2, sticky="w")
 
 		# Add PID D label
 		pid_d_label = ttk.Label(master=pid_frame, text="Derivative")			# Make new label
 		pid_d_label.grid(column=0, row=2, padx=10, pady=10, sticky="nw")		# Add label to PID frame
-		self.param_d_m = ttk.Button(master=pid_frame, text="-", command=self.pid_param_d_minus)
-		self.param_d_m.grid(column=1, row=2, padx=2, pady=2, sticky="ns")
+		self.param_d_m = ttk.Button(master=pid_frame, text="-0.01", command=self.pid_param_d_minus)
+		self.param_d_m.grid(column=1, row=2, padx=2, pady=2, sticky="e")
 		self.param_d_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
 		self.param_d_f.grid(column=2, row=2, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
-		self.param_d_p = ttk.Button(master=pid_frame, text="+", command=self.pid_param_d_plus)
-		self.param_d_p.grid(column=3, row=2, padx=2, pady=2, sticky="ns")
+		self.param_d_p = ttk.Button(master=pid_frame, text="+0.01", command=self.pid_param_d_plus)
+		self.param_d_p.grid(column=3, row=2, padx=2, pady=2, sticky="w")
 
 		# Add Submit button
 		self.param_pid_button = ttk.Button(master=pid_frame, text="Upload PID Params", command=self.get_pid_params)
