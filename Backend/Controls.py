@@ -20,7 +20,7 @@ The desired velocity should be part of the result to be sent to GUI
 """
 
 class FalconController:
-    def __init__(self, camera_id = 0):
+    def __init__(self):
         self.detector = AprilTagDetector()
         
         self.kp = 0.0
@@ -41,7 +41,7 @@ class FalconController:
         - desired_velocity: np.array ([vx, vy, vz]) representing the desired velocity of the drone (m/s)
         """
         
-        tag_pose =np.array(tag_pose)
+        tag_pose = np.array(tag_pose)
         tag_velocity = np.array(tag_velocity)
         
         # use PID controller, here we only use P controller for now

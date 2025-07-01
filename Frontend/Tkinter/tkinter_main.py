@@ -153,6 +153,8 @@ class Monitor:
 			self.cam_frame.configure(image=photo_image)
 			
 			self.cam_frame.after(10, self.cam_feed)
+		else:
+			print("No camera selected or camera feed stopped.")
 
 	def cam_selection(self):
 		use_cam = self.cam_dropdown.get()		# Returned in integer: string form
@@ -175,11 +177,23 @@ class Monitor:
 	def port_selection(self):
 		use_port = self.port_dropdown.get()		# Returned in string form
 		print(use_port)
-		if use_port != "":
-			# Chop off the description
+		if use_port == "-1 Close" and self.teensy_serial is None:
+			print("No serial port to close")
+		elif use_port == "-1 Close" and self.teensy_serial is not None:
+			print("Closing serial port")
+			self.teensy_serial.close()									# Close the serial port
+			self.teensy_serial = None									# Set the serial port to None
+		elif use_port != "" and self.teensy_serial is None:
+			idx = use_port.find(" ")
+			use_port = use_port[:idx]									# Chop off the description
+			print(f'Selected serial port: {use_port}')
+			self.teensy_serial = SerialComms.connect_serial(use_port)	# Connect to serial port, e.g. "COM9"
+			self.get_serial_data()										# Get data from the Teensy, and assign to labels
+		elif use_port != "" and self.teensy_serial is not None:			# For users to change serial port
 			idx = use_port.find(" ")
 			use_port = use_port[:idx]
 			print(f'Selected serial port: {use_port}')
+			self.teensy_serial.close()
 			self.teensy_serial = SerialComms.connect_serial(use_port)
 			self.get_serial_data()
 		else:
@@ -189,16 +203,17 @@ class Monitor:
 		self.port_dropdown["values"] = SerialComms.list_ports()
 
 	def get_serial_data(self):
-		# Get data from IMU, in dictionary form
-		self.imu_data = SerialComms.read_serial(self.teensy_serial)
-		# Assign data from the dictionary to the labels
-		self.roll_label.config(text=self.imu_data["Roll"] + "°")
-		self.pitch_label.config(text=self.imu_data["Pitch"] + "°")
-		self.yaw_label.config(text=self.imu_data["Yaw"] + "°")
-		self.int_temp_label.config(text=self.imu_data["Temp"] + "°C")
+		if self.teensy_serial is not None:
+			# Get data from IMU, in dictionary form
+			self.imu_data = SerialComms.read_serial(self.teensy_serial)
+			# Assign data from the dictionary to the labels
+			self.roll_label.config(text=self.imu_data["Roll"] + "°")
+			self.pitch_label.config(text=self.imu_data["Pitch"] + "°")
+			self.yaw_label.config(text=self.imu_data["Yaw"] + "°")
+			self.int_temp_label.config(text=self.imu_data["Temp"] + "°C")
 
-		# Can choose any label, check every 1s
-		self.roll_label.after(1000, self.get_serial_data)
+			# Can choose any label, check every 1s
+			self.roll_label.after(1000, self.get_serial_data)
 
 	def get_pid_params(self):
 		p = self.param_p_f.get()
@@ -289,10 +304,6 @@ class Monitor:
 		camera_frame.columnconfigure(0, weight=1, minsize=300)
 		camera_frame.rowconfigure(0, weight=1, minsize=400)
 
-		# Placeholder for where the live camera feed will be
-		# camera_placeholder_label = ttk.Label(master=camera_frame, text="Camera Live Feed to be added here")
-		# camera_placeholder_label.grid(column=0, row=0, padx=20, pady=20, sticky="")
-
 		# Live camera feed
 		self.cam_frame = ttk.Label(master=camera_frame, text="Multiple cameras detected, use the dropdown to select")
 		self.cam_frame.grid(column=0, row=0, padx=20, pady=20, sticky="")
@@ -307,10 +318,6 @@ class Monitor:
 		detection_frame.grid(column=0, row=1, padx=10, pady=10, sticky="ew")
 		detection_frame.columnconfigure((0, 1), weight=1)
 		detection_frame.rowconfigure((0, 1), weight=1)
-
-		# Placeholder for live cropped view
-		# camera_placeholder_label = ttk.Label(master=detection_frame, text="AprilTag detection view to be added")
-		# camera_placeholder_label.grid(column=0, row=0, rowspan=3, padx=5, pady=5, sticky="ns")
 
 		detection_label = ttk.Label(master=detection_frame, text="Detected AprilTag message")
 		detection_label.grid(column=0, row=0, padx=5, pady=5, sticky="n")
@@ -340,6 +347,7 @@ class Monitor:
 		port_select_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
 		list_ports = SerialComms.list_ports()
 		self.port_dropdown = ttk.Combobox(master=detection_frame, values=list_ports)
+		self.port_dropdown.current(0)
 		self.port_dropdown.grid(column=2, row=1, padx=5, pady=5, sticky="n")
 
 		# Serial port button frame
