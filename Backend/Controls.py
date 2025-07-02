@@ -1,11 +1,10 @@
-import cv2
 import numpy as np
 import time
 from AprilTagDetection import AprilTagDetector
 
 """
-runs the control logic for uav after detection
-main logic:
+Runs the control logic for UAV after detection
+Main logic:
 Assume the drone is stationary, given the tag's relative velocity from it, 
 cancel out the tag's motion by commanding the drone to move in the opposite direction.
 If tag is moving → v_relative = tag velocity in camera frame
@@ -25,11 +24,10 @@ class FalconController:
         
         self.kp = 0.0
         self.ki = 0.0
-        self.kd = 0.0   
+        self.kd = 0.0
         self.max_velocity = 1.0
         
         self.current_uav_position = np.array([0.0, 0.0, 0.0])
-        
         
     def compute_desired_velocity(self, tag_pose, tag_velocity):
         """
@@ -54,41 +52,38 @@ class FalconController:
             desired_velocity = (desired_velocity / speed) * self.max_velocity
         return desired_velocity.tolist()  # Convert to list for compatibility with GUI
     
-    def run_once(self):
+    def run_once(self, frame):
         """
-        Capture a frame from the camera, detect AprilTags, compute desired velocity.
+        Analysing a frame from the camera, detect AprilTags, compute desired velocity.
         Return a list of tag detection results with added desired velocity.
         """
-        ret, frame = self.cap.read()
-        if not ret:
-            print("Failed to capture frame")
-            return []
-        
-        detections = self.detector.detect(frame)
-        
+        detections = self.detector.detect(frame)            # List of detected AprilTags
+
         results = []
         for detection in detections:
-            tag_pose = detection['pose']
+            print(detection)
+            tag_pose = detection.pose_t
             tag_velocity = detection['velocity']
             
             desired_velocity = self.compute_desired_velocity(tag_pose, tag_velocity)
             detection["desired_velocity"] = desired_velocity
             results.append(detection)
-        
         return results
     
-    def release(self):
-        self.cap.release()
         
 if __name__ == "__main__":
     fc = FalconController()
     try:
-        while True:
-            results = fc.run_once()
+        import cv2
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
+
+        frame = cv2.imread('Tests/test_3_recursive.png')
+        results = fc.run_once(frame)
+        print(results)
+        if results is not None:
             for det in results:
                 print(f"Tag ID {det['id']}: Pose {det['pose']}, Velocity {det['velocity']}, Desired Vel {det['desired_velocity']}")
-            time.sleep(0.03)  # ~30 FPS
-    except KeyboardInterrupt:
-        print("Shutting down...")
-    finally:
-        fc.release()
+    except ImportError as e:
+        print(f"Error importing modules: {e}")

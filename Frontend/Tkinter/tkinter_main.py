@@ -8,6 +8,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
 from Backend.AprilTagDetection import AprilTagDetector 	# Importing the AprilTag detector class from the Backend module
+from Backend.Controls1 import FalconController
 import numpy as np
 
 
@@ -42,6 +43,8 @@ class Monitor:
 		self.detected_message_data = "Nothing"
 		self.apriltag_detector = AprilTagDetector()
 
+		self.velocity_estimator = FalconController()
+
 		# Control buttons
 		self.start = None
 		self.failsafe = None
@@ -72,9 +75,6 @@ class Monitor:
 		self.x_label = None
 		self.y_label = None
 		self.z_label = None
-		self.x_data = str(0)
-		self.y_data = str(0)
-		self.z_data = str(0)
 
 		# Parameter labels
 		self.roll_label = None
@@ -141,6 +141,14 @@ class Monitor:
 				message = f"Detected {len(detections)} tag(s): " + ', '.join(str(d.tag_id) for d in detections)
 				self.detected_message_label.config(text=message)
 				print(message)
+
+				# Adding velocity estimation
+				det = detections[0] if isinstance(detections, list) else detections				# If detections is a list, take first
+				self.velocity_estimator.new_detection(det)
+				temp_velocity = self.velocity_estimator.get_velocity()
+				self.x_label.config(text=str(round(temp_velocity[0], 3)) + " m/s")
+				self.y_label.config(text=str(round(temp_velocity[1], 3)) + " m/s")
+				self.z_label.config(text=str(round(temp_velocity[2], 3)) + " m/s")
 			else:
 				self.detected_message_label.config(text="No tags detected")
 
@@ -473,9 +481,9 @@ class Monitor:
 		v_z_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
 
 		# Add the data labels and add them to velocity frame
-		self.x_label = ttk.Label(master=velo_frame, text=self.x_data + "m/s")
-		self.y_label = ttk.Label(master=velo_frame, text=self.y_data + "m/s")
-		self.z_label = ttk.Label(master=velo_frame, text=self.z_data + "m/s")
+		self.x_label = ttk.Label(master=velo_frame, text="0m/s")
+		self.y_label = ttk.Label(master=velo_frame, text="0m/s")
+		self.z_label = ttk.Label(master=velo_frame, text="0m/s")
 		self.x_label.grid(column=0, row=1, padx=5, pady=5, sticky="n")
 		self.y_label.grid(column=1, row=1, padx=5, pady=5, sticky="n")
 		self.z_label.grid(column=2, row=1, padx=5, pady=5, sticky="n")
