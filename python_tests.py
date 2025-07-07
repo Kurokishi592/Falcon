@@ -20,6 +20,7 @@ class TestFalcon(unittest.TestCase):
             detector = AprilTagDetector()
             image = cv2.imread('Tests/test_3_recursive.png')
             tags = detector.detect(image)
+            print(tags[0])
             self.assertEqual(len(tags), 3, "Expected to detect three tags in the test image")
             self.assertEqual(tags[0].tag_id, 0, "Expected first tag ID to be 0")
             self.assertEqual(tags[1].tag_id, 1, "Expected second tag ID to be 1")

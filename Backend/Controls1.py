@@ -9,21 +9,35 @@ class FalconController():
 
         self.velocity = np.zeros(3)
 
-    def _compose_pose(self, detection):
+    def _compute_pose(self, detection):
+        """
+        Compute pose from detection data
+        :param detection: Detection object containing pose_R and pose_t
+        :return: Pose (pose_R transposed, t) as a numpy array
+        """
         pose = -np.matmul(detection.pose_R.T, detection.pose_t)
         return pose
     
     def new_detection(self, detection):
+        """
+        Process a new detection and update the pose and velocity
+        :param detection: Detection object containing pose_R and pose_t
+        :return: None
+        """
         if self._last_time is None:                 # For new detections
             self._last_time = time.time()
-            self._last_pose_t = self._compose_pose(detection)
+            self._last_pose_t = self._compute_pose(detection)
         elif self.pose is not None:
             self._last_pose_t = self.pose.copy()
-            self.pose = self._compose_pose(detection)
+            self.pose = self._compute_pose(detection)
         else:
-            self.pose = self._compose_pose(detection)
+            self.pose = self._compute_pose(detection)
 
     def get_velocity(self):
+        """
+        Calculate the velocity based on the difference between current and previous pose and time
+        :return: Velocity as a numpy array, or zero vector if no previous pose exists
+        """
         current_time = time.time()
 
         if self._last_pose_t is not None and self.pose is not None:
@@ -37,6 +51,10 @@ class FalconController():
 
 
 if __name__ == "__main__":
+    """
+    Controls test to check if FalconController computes velocity correctly
+    Replicated in unittest for automatic testing
+    """
     import cv2
     from AprilTagDetection import AprilTagDetector
     import sys

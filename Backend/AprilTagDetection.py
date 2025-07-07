@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from pupil_apriltags import Detector # Importing the apriltag detector from pupil_labs, non-ROS python optimised.
+from pupil_apriltags import Detector
 
 # I want to try AprilTag V3 which is said to be optimised "for quadrotor localisation above a landing site".
 # ArUco is what jellyfish uses, and it's supposed to be much simpler and better compatibility with opencv.
@@ -16,9 +16,7 @@ class AprilTagDetector:
         self.tag_size = tag_size    # Size of the AprilTag in meters
 
         self.detector = Detector(
-            families="tagCustom48h12",    
-            # for our recursive tag we must use this family
-            # other families like tag36h11 or tag16h5 or tagStandard41h12 have different varieties and purposes
+            families="tagCustom48h12",    # Custom tag family for use with recursive tags
             nthreads=4,                   # Number of threads to use for detection
             quad_decimate=1.0,            # Decimation factor for the quad detection, can try 2.0 for better performance at cost of accuracy
             quad_sigma=1.0,               # Sigma for the quad detection
@@ -28,6 +26,11 @@ class AprilTagDetector:
         )
 
     def detect(self, frame):
+        """
+        Detects and returns AprilTag detections from a given frame
+        :param frame: Input image frame from the webcam
+        :return: List of detected AprilTag detections
+        """
         # Convert to grayscale, a detection step introduced in Apriltag V2.
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
