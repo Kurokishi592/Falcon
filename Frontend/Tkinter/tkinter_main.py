@@ -389,7 +389,10 @@ class Monitor:
 		self.x_output = 0
 		self.y_output = 0
 		self.z_output = 0
-		self.x_p_label.after_cancel(self.pid_update_ID)
+		if self.pid_update_ID is not None:
+			# Cancel the PID update loop
+			self.x_p_label.after_cancel(self.pid_update_ID)
+			self.pid_update_ID = None
 		self.x_p_label.config(text="0m/s")
 		self.y_p_label.config(text="0m/s")
 		self.z_p_label.config(text="0m/s")
