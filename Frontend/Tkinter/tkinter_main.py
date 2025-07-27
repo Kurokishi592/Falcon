@@ -3,13 +3,14 @@ from tkinter import ttk
 from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
+import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
 from Backend.AprilTagDetection import AprilTagDetector 	# Importing the AprilTag detector class from the Backend module
 from Backend.Controls1 import FalconController
-import numpy as np
+from Backend.PID import PID
 
 
 class Monitor:
@@ -59,6 +60,8 @@ class Monitor:
 		self.param_i = 0
 		self.param_d = 0
 
+		self.pid_update_ID = None
+
 		# +/- buttons
 		self.param_p_p = None
 		self.param_p_m = None
@@ -72,9 +75,31 @@ class Monitor:
 		self.timeout_button = None
 
 		# Velocity stuff
+		# Measured velocity
 		self.x_label = None
 		self.y_label = None
 		self.z_label = None
+
+		self.x_raw = None
+		self.y_raw = None
+		self.z_raw = None
+
+		# Predicted velocity
+		self.x_p_label = None
+		self.y_p_label = None
+		self.z_p_label = None
+
+		self.setpoint = None
+
+		self.x_output = None
+		self.y_output = None
+		self.z_output = None
+
+		# Predicted velocity PID
+		self.x_pid = PID(kp=1.0, ki=0.0, kd=0.0)
+		self.y_pid = PID(kp=1.0, ki=0.0, kd=0.0)
+		self.z_pid = PID(kp=1.0, ki=0.0, kd=0.0)
+
 
 		# Parameter labels
 		self.roll_label = None
@@ -89,15 +114,18 @@ class Monitor:
 		self._find_cams()
 		if self.num_cams == 1:
 			self._cam_start(list(self.dict_cams)[0])
+		
 		self.create_gui()
 
-	def _find_cams(self):					# Find cameras connected to the computer
+	def _find_cams(self):
+		# Find cameras connected to the computer
 		print("List of cameras detected: ")
 		self.dict_cams = check_cams()
 		self.num_cams = len(self.dict_cams) - 1
 		print(f'Number of cameras detected: {self.num_cams}')
 
-	def _cam_start(self, use_cam):			# Start the selected camera, use_cam is the index of the camera
+	def _cam_start(self, use_cam):
+		# Start the selected camera, use_cam is the index of the camera
 		if self.use_cam != use_cam:
 			self.use_cam = use_cam
 			print(f'Using camera: {self.use_cam}')
@@ -108,14 +136,16 @@ class Monitor:
 			self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
 			self._cam_feed()
 
-	def _cam_stop(self):					# Stop the camera feed
+	def _cam_stop(self):
+		# Stop the camera feed
 		self.use_cam = None
 		if self.vid is not None:
 			self.vid.release()
 			self.vid = None
 			self.cam_frame.photo_image = None
 
-	def _cam_feed(self):					# Get the camera feed and process it for AprilTag detection
+	def _cam_feed(self):
+		# Get the camera feed and process it for AprilTag detection
 		if self.vid is not None:
 			ret, frame = self.vid.read()
 			if not ret:
@@ -146,9 +176,12 @@ class Monitor:
 				det = detections[0] if isinstance(detections, list) else detections				# If detections is a list, take first
 				self.velocity_estimator.new_detection(det)
 				temp_velocity = self.velocity_estimator.get_velocity()
-				self.x_label.config(text=str(round(temp_velocity[0], 3)) + " m/s")
-				self.y_label.config(text=str(round(temp_velocity[1], 3)) + " m/s")
-				self.z_label.config(text=str(round(temp_velocity[2], 3)) + " m/s")
+				self.x_raw = temp_velocity[0]
+				self.y_raw = temp_velocity[1]
+				self.z_raw = temp_velocity[2]
+				self.x_label.config(text=str(round(self.x_raw, 3)) + " m/s")
+				self.y_label.config(text=str(round(self.y_raw, 3)) + " m/s")
+				self.z_label.config(text=str(round(self.z_raw, 3)) + " m/s")
 			else:
 				self.detected_message_label.config(text="No tags detected")
 
@@ -165,6 +198,7 @@ class Monitor:
 			print("No camera selected or camera feed stopped.")
 
 	def _cam_selection(self):
+		# Function for start camera button
 		use_cam = self.cam_dropdown.get()		# Returned in integer: string form
 		print(use_cam)
 		if use_cam != "-1: Off":
@@ -178,11 +212,13 @@ class Monitor:
 			self._cam_stop()
 
 	def _refresh_cam(self):
+		# Function for camera refresh button
 		self._find_cams()
 		list_cams = [str(key) + ": " + value for key, value in self.dict_cams.items()]
 		self.cam_dropdown["values"] = list_cams
 
 	def _port_selection(self):
+		# Function for serial port selection
 		use_port = self.port_dropdown.get()		# Returned in string form
 		print(use_port)
 		if use_port == "-1 Close" and self.teensy_serial is None:
@@ -208,9 +244,11 @@ class Monitor:
 			print("No serial port selected")
 
 	def _refresh_ports(self):
+		# Function for serial port refresh button
 		self.port_dropdown["values"] = SerialComms.list_ports()
 
 	def _get_serial_data(self):
+		# Function for serial port start button
 		if self.teensy_serial is not None:
 			# Get data from IMU, in dictionary form
 			self.imu_data = SerialComms.read_serial(self.teensy_serial)
@@ -224,21 +262,29 @@ class Monitor:
 			self.roll_label.after(1000, self._get_serial_data)
 
 	def _get_pid_params(self):
+		# Function for PID submit button
 		p = self.param_p_f.get()
 		i = self.param_i_f.get()
 		d = self.param_d_f.get()
-		print(f"P {p}, I {i}, D {d}")
+		setpt = self.param_pid_setpoint.get()
+		print(f"P {p}, I {i}, D {d}, Setpoint {setpt}")
 		try:
-			if float(p) >= 0 and float(i) >= 0 and float(d) >= 0:
-				self.param_p = p
-				self.param_i = i
-				self.param_d = d
+			if float(p) >= 0 and float(i) >= 0 and float(d) >= 0 and setpt != "":
+				self.param_p = float(p)
+				self.param_i = float(i)
+				self.param_d = float(d)
+				self.param_setpt = float(setpt)
 				self.param_pid_pass_fail.config(text="Success!")
 				print("Successfully uploaded PID values")
+				# Update the PID instances
+				self.x_pid.modify_values(self.param_p, self.param_i, self.param_d)
+				self.y_pid.modify_values(self.param_p, self.param_i, self.param_d)
+				self.z_pid.modify_values(self.param_p, self.param_i, self.param_d)
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def _pid_param_p_plus(self):
+		# Function for PID P plus button
 		curr = self.param_p_f.get()
 		try:
 			if curr != "":
@@ -249,6 +295,7 @@ class Monitor:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def _pid_param_p_minus(self):
+		# Function for PID P minus button
 		curr = self.param_p_f.get()
 		try:
 			if curr != "" and float(curr) > 0:
@@ -259,6 +306,7 @@ class Monitor:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def _pid_param_i_plus(self):
+		# Function for PID I plus button
 		curr = self.param_i_f.get()
 		try:
 			if curr != "":
@@ -269,6 +317,7 @@ class Monitor:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def _pid_param_i_minus(self):
+		# Function for PID I minus button
 		curr = self.param_i_f.get()
 		try:
 			if curr != "" and float(curr) > 0:
@@ -279,6 +328,7 @@ class Monitor:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def _pid_param_d_plus(self):
+		# Function for PID D plus button
 		curr = self.param_d_f.get()
 		try:
 			if curr != "":
@@ -289,6 +339,7 @@ class Monitor:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def _pid_param_d_minus(self):
+		# Function for PID D minus button
 		curr = self.param_d_f.get()
 		try:
 			if curr != "" and int(curr) > 0:
@@ -297,6 +348,31 @@ class Monitor:
 				self.param_d_f.insert(0, str(round(float(curr) - 0.01, 3)))
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def _velocity_pid(self):
+		# Update the PID controllers with the current velocity
+		if self.x_raw is not None and self.y_raw is not None and self.z_raw is not None:
+			self.x_output = self.x_pid.update(setpoint=self.param_setpt, measured_value=self.x_raw)
+			self.y_output = self.y_pid.update(setpoint=0, measured_value=self.y_raw)
+			self.z_output = self.z_pid.update(setpoint=0, measured_value=self.z_raw)
+			self.x_p_label.config(text=str(round(self.x_output, 3)) + "m/s")
+			self.y_p_label.config(text=str(round(self.y_output, 3)) + "m/s")
+			self.z_p_label.config(text=str(round(self.z_output, 3)) + "m/s")
+	
+	def _start(self):
+		# Function for start button, starts PID calculation
+		self._velocity_pid()
+		self.pid_update_ID = self.x_p_label.after(100, self._velocity_pid)
+
+	def _failsafe(self):
+		# Function for failsafe button, sets all output to zero for the drone to go into hover mode
+		self.x_output = 0
+		self.y_output = 0
+		self.z_output = 0
+		self.x_p_label.after_cancel(self.pid_update_ID)
+		self.x_p_label.config(text="0m/s")
+		self.y_p_label.config(text="0m/s")
+		self.z_p_label.config(text="0m/s")
 
 	def create_gui(self):
 		self.window.title("Falcon Parameter Screen")
@@ -381,8 +457,8 @@ class Monitor:
 		# Set and place buttons
 		button_style = ttk.Style()
 		button_style.configure("my.TButton", font=14)
-		self.start = ttk.Button(master=button_frame, style="my.TButton", text="Start")
-		self.failsafe = ttk.Button(master=button_frame, style="my.TButton", text="Failsafe")
+		self.start = ttk.Button(master=button_frame, style="my.TButton", text="Start", command=self._start)
+		self.failsafe = ttk.Button(master=button_frame, style="my.TButton", text="Failsafe", command=self._failsafe)
 		self.start.grid(column=0, row=0, padx=10, pady=10, ipadx=20, ipady=20, sticky="n")
 		self.failsafe.grid(column=1, row=0, padx=10, pady=10, ipadx=20, ipady=20, sticky="n")
 
@@ -405,7 +481,7 @@ class Monitor:
 		pid_frame = ttk.LabelFrame(master=param_frame, text="PID")
 		pid_frame.grid(column=0, row=0, padx=10, pady=10, sticky="nsew")
 		pid_frame.columnconfigure((0, 1, 2, 3), weight=1)
-		pid_frame.rowconfigure((0, 1, 2, 3), weight=1)
+		pid_frame.rowconfigure((0, 1, 2, 3, 4), weight=1)
 
 		# PID P
 		pid_p_label = ttk.Label(master=pid_frame, text="Proportional")			# Make new label
@@ -437,12 +513,18 @@ class Monitor:
 		self.param_d_p = ttk.Button(master=pid_frame, text="+0.01", command=self._pid_param_d_plus)
 		self.param_d_p.grid(column=3, row=2, padx=2, pady=2, sticky="w")
 
+		# Add setpoint label
+		setpoint_label = ttk.Label(master=pid_frame, text="Setpoint")			# Make new label
+		setpoint_label.grid(column=0, row=3, padx=10, pady=10, sticky="nw")		# Add label to PID frame
+		self.param_pid_setpoint = ttk.Entry(master=pid_frame, width=30)			# Make new Entry (user input box)
+		self.param_pid_setpoint.grid(column=2, row=3, padx=10, pady=10, sticky="ns")	# Place Entry beside the label
+
 		# Add Submit button
 		self.param_pid_button = ttk.Button(master=pid_frame, text="Upload PID Params", command=self._get_pid_params)
-		self.param_pid_button.grid(column=0, row=3, columnspan=3, padx=10, pady=10, ipadx=15, ipady=15, sticky="n")
+		self.param_pid_button.grid(column=0, row=4, columnspan=3, padx=10, pady=10, ipadx=15, ipady=15, sticky="n")
 
 		self.param_pid_pass_fail = ttk.Label(master=pid_frame, text="")
-		self.param_pid_pass_fail.grid(column=3, row=3, padx=10, pady=10, sticky="ns")
+		self.param_pid_pass_fail.grid(column=3, row=4, padx=10, pady=10, sticky="ns")
 
 		####################
 		# Timeout Frame #
@@ -469,24 +551,36 @@ class Monitor:
 		####################
 		velo_frame = ttk.LabelFrame(master=self.window, text="Velocity Data")
 		velo_frame.grid(column=1, row=1, padx=10, pady=10, sticky="ew")
-		velo_frame.columnconfigure((0, 1, 2), weight=1)
-		velo_frame.rowconfigure((0, 1), weight=1)
+		velo_frame.columnconfigure((0, 1, 2, 3), weight=1)
+		velo_frame.rowconfigure((0, 1, 2), weight=1)
 
 		# Add labels and add them to velocity frame
+		v_m_label = ttk.Label(master=velo_frame, text="Measured")
+		v_m_label.grid(column=0, row=1, padx=5, pady=5, sticky="n")
+		v_p_label = ttk.Label(master=velo_frame, text="Predicted")
+		v_p_label.grid(column=0, row=2, padx=5, pady=5, sticky="n")
+
 		v_x_label = ttk.Label(master=velo_frame, text="X")
 		v_y_label = ttk.Label(master=velo_frame, text="Y")
 		v_z_label = ttk.Label(master=velo_frame, text="Z")
-		v_x_label.grid(column=0, row=0, padx=5, pady=5, sticky="n")
-		v_y_label.grid(column=1, row=0, padx=5, pady=5, sticky="n")
-		v_z_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
+		v_x_label.grid(column=1, row=0, padx=5, pady=5, sticky="n")
+		v_y_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
+		v_z_label.grid(column=3, row=0, padx=5, pady=5, sticky="n")
 
 		# Add the data labels and add them to velocity frame
 		self.x_label = ttk.Label(master=velo_frame, text="0m/s")
 		self.y_label = ttk.Label(master=velo_frame, text="0m/s")
 		self.z_label = ttk.Label(master=velo_frame, text="0m/s")
-		self.x_label.grid(column=0, row=1, padx=5, pady=5, sticky="n")
-		self.y_label.grid(column=1, row=1, padx=5, pady=5, sticky="n")
-		self.z_label.grid(column=2, row=1, padx=5, pady=5, sticky="n")
+		self.x_label.grid(column=1, row=1, padx=5, pady=5, sticky="n")
+		self.y_label.grid(column=2, row=1, padx=5, pady=5, sticky="n")
+		self.z_label.grid(column=3, row=1, padx=5, pady=5, sticky="n")
+
+		self.x_p_label = ttk.Label(master=velo_frame, text="0m/s")
+		self.y_p_label = ttk.Label(master=velo_frame, text="0m/s")
+		self.z_p_label = ttk.Label(master=velo_frame, text="0m/s")
+		self.x_p_label.grid(column=1, row=2, padx=5, pady=5, sticky="n")
+		self.y_p_label.grid(column=2, row=2, padx=5, pady=5, sticky="n")
+		self.z_p_label.grid(column=3, row=2, padx=5, pady=5, sticky="n")
 
 		####################
 		# Sensor Data Frame #
