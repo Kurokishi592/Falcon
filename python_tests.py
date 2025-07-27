@@ -102,6 +102,26 @@ class TestFalcon(unittest.TestCase):
         except Exception as e:
             self.fail(f"AprilTag Velocity computation failed {e}")
 
+    def test_zero_velocity_detection(self):
+        """
+        Tests if FalconController returns zero velocity when no detection is made
+        Should return 0.0, 0.0, 0.0
+        """
+        try:
+            frame1 = cv2.imread("Tests/test_3_original.png")
+            frame2 = cv2.imread("Tests/test_3_original.png")
+            detector = AprilTagDetector()
+            detection1 = detector.detect(frame1)
+            detection2 = detector.detect(frame2)
+            fc = FalconController()
+            fc.new_detection(detection1[0])
+            fc.new_detection(detection2[0])
+            velocity = fc.get_velocity()
+            self.assertEqual(velocity[0], 0.0, "Expected x velocity to be 0.0")
+            self.assertEqual(velocity[1], 0.0, "Expected y velocity to be 0.0")
+            self.assertEqual(velocity[2], 0.0, "Expected z velocity to be 0.0")
+        except Exception as e:
+            self.fail(f"FalconController zero velocity failed {e}")
 
 if __name__ == '__main__':
     unittest.main()
