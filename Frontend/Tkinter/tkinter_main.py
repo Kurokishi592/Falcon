@@ -56,9 +56,9 @@ class Monitor:
 		self.param_d_f = None
 		self.param_pid_button = None
 		self.param_pid_pass_fail = None
-		self.param_p = 0
+		self.param_p = 1.23
 		self.param_i = 0
-		self.param_d = 0
+		self.param_d = 1.45
 
 		self.pid_update_ID = None
 
@@ -69,6 +69,9 @@ class Monitor:
 		self.param_i_m = None
 		self.param_d_p = None
 		self.param_d_m = None
+
+		self.setpt_p = None
+		self.setpt_m = None
 
 		# Marker loss timeout stuff
 		self.timeout = None
@@ -89,17 +92,16 @@ class Monitor:
 		self.y_p_label = None
 		self.z_p_label = None
 
-		self.setpoint = None
+		self.setpoint = 0.5		# Default setpoint
 
 		self.x_output = None
 		self.y_output = None
 		self.z_output = None
 
 		# Predicted velocity PID
-		self.x_pid = PID(kp=1.0, ki=0.0, kd=0.0)
-		self.y_pid = PID(kp=1.0, ki=0.0, kd=0.0)
-		self.z_pid = PID(kp=1.0, ki=0.0, kd=0.0)
-
+		self.x_pid = PID(kp=self.param_p, ki=self.param_i, kd=self.param_d)
+		self.y_pid = PID(kp=self.param_p, ki=self.param_i, kd=self.param_d)
+		self.z_pid = PID(kp=self.param_p, ki=self.param_i, kd=self.param_d)
 
 		# Parameter labels
 		self.roll_label = None
@@ -186,7 +188,6 @@ class Monitor:
 				self.detected_message_label.config(text="No tags detected")
 
 			# Convert the frame to RGB format for Tkinter
-			# _, frame = self.vid.read()
 			raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 			conv_image = Image.fromarray(raw_image)
 			photo_image = ImageTk.PhotoImage(image=conv_image)
@@ -273,7 +274,7 @@ class Monitor:
 				self.param_p = float(p)
 				self.param_i = float(i)
 				self.param_d = float(d)
-				self.param_setpt = float(setpt)
+				self.setpoint = float(setpt)
 				self.param_pid_pass_fail.config(text="Success!")
 				print("Successfully uploaded PID values")
 				# Update the PID instances
@@ -349,20 +350,39 @@ class Monitor:
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
-	def _velocity_pid(self):
-		# Update the PID controllers with the current velocity
+	def _setpt_param_plus(self):
+		# Function for setpoint plus button
+		curr = self.param_pid_setpoint.get()
+		try:
+			if curr != "":
+				self.param_pid_pass_fail.config(text="")
+				self.param_pid_setpoint.delete(0, "end")
+				self.param_pid_setpoint.insert(0, str(round(float(curr) + 0.1, 3)))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def _setpt_param_minus(self):
+		# Function for setpoint minus button
+		curr = self.param_pid_setpoint.get()
+		try:
+			if curr != "" and float(curr) > 0:
+				self.param_pid_pass_fail.config(text="")
+				self.param_pid_setpoint.delete(0, "end")
+				self.param_pid_setpoint.insert(0, str(round(float(curr) - 0.1, 3)))
+		except ValueError:
+			self.param_pid_pass_fail.config(text="Non-integer")
+
+	def _start(self):
+		# Function for start button, starts PID calculation
 		if self.x_raw is not None and self.y_raw is not None and self.z_raw is not None:
-			self.x_output = self.x_pid.update(setpoint=self.param_setpt, measured_value=self.x_raw)
-			self.y_output = self.y_pid.update(setpoint=0, measured_value=self.y_raw)
-			self.z_output = self.z_pid.update(setpoint=0, measured_value=self.z_raw)
+			print("Updating")
+			self.x_output = self.x_pid.update(setpoint=self.setpoint, measured_value=self.x_raw)
+			self.y_output = self.y_pid.update(setpoint=self.setpoint, measured_value=self.y_raw)
+			self.z_output = self.z_pid.update(setpoint=self.setpoint, measured_value=self.z_raw)
 			self.x_p_label.config(text=str(round(self.x_output, 3)) + "m/s")
 			self.y_p_label.config(text=str(round(self.y_output, 3)) + "m/s")
 			self.z_p_label.config(text=str(round(self.z_output, 3)) + "m/s")
-	
-	def _start(self):
-		# Function for start button, starts PID calculation
-		self._velocity_pid()
-		self.pid_update_ID = self.x_p_label.after(100, self._velocity_pid)
+			self.pid_update_ID = self.x_p_label.after(100, self._start)
 
 	def _failsafe(self):
 		# Function for failsafe button, sets all output to zero for the drone to go into hover mode
@@ -489,6 +509,7 @@ class Monitor:
 		self.param_p_m = ttk.Button(master=pid_frame, text="-0.1", command=self._pid_param_p_minus)
 		self.param_p_m.grid(column=1, row=0, padx=2, pady=2, sticky="e")
 		self.param_p_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
+		self.param_p_f.insert("end", self.param_p)								# Insert default value of param_p
 		self.param_p_f.grid(column=2, row=0, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
 		self.param_p_p = ttk.Button(master=pid_frame, text="+0.1", command=self._pid_param_p_plus)
 		self.param_p_p.grid(column=3, row=0, padx=2, pady=2, sticky="w")
@@ -499,6 +520,7 @@ class Monitor:
 		self.param_i_m = ttk.Button(master=pid_frame, text="-0.001", command=self._pid_param_i_minus)
 		self.param_i_m.grid(column=1, row=1, padx=2, pady=2, sticky="e")
 		self.param_i_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
+		self.param_i_f.insert("end", self.param_i)								# Insert default value of param_i
 		self.param_i_f.grid(column=2, row=1, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
 		self.param_i_p = ttk.Button(master=pid_frame, text="+0.001", command=self._pid_param_i_plus)
 		self.param_i_p.grid(column=3, row=1, padx=2, pady=2, sticky="w")
@@ -509,6 +531,7 @@ class Monitor:
 		self.param_d_m = ttk.Button(master=pid_frame, text="-0.01", command=self._pid_param_d_minus)
 		self.param_d_m.grid(column=1, row=2, padx=2, pady=2, sticky="e")
 		self.param_d_f = ttk.Entry(master=pid_frame, width=30)					# Make new Entry (user input box)
+		self.param_d_f.insert("end", self.param_d)								# Insert default value of param_d
 		self.param_d_f.grid(column=2, row=2, padx=10, pady=10, sticky="ns")		# Place Entry beside the label
 		self.param_d_p = ttk.Button(master=pid_frame, text="+0.01", command=self._pid_param_d_plus)
 		self.param_d_p.grid(column=3, row=2, padx=2, pady=2, sticky="w")
@@ -516,8 +539,13 @@ class Monitor:
 		# Add setpoint label
 		setpoint_label = ttk.Label(master=pid_frame, text="Setpoint")			# Make new label
 		setpoint_label.grid(column=0, row=3, padx=10, pady=10, sticky="nw")		# Add label to PID frame
+		self.setpt_p = ttk.Button(master=pid_frame, text="+0.1", command=self._setpt_param_plus)
+		self.setpt_p.grid(column=1, row=3, padx=2, pady=2, sticky="e")			# Place button beside the label
 		self.param_pid_setpoint = ttk.Entry(master=pid_frame, width=30)			# Make new Entry (user input box)
+		self.param_pid_setpoint.insert("end", self.setpoint)					# Insert default value of setpoint
 		self.param_pid_setpoint.grid(column=2, row=3, padx=10, pady=10, sticky="ns")	# Place Entry beside the label
+		self.setpt_m = ttk.Button(master=pid_frame, text="-0.1", command=self._setpt_param_minus)
+		self.setpt_m.grid(column=3, row=3, padx=2, pady=2, sticky="w")			# Place button beside the label
 
 		# Add Submit button
 		self.param_pid_button = ttk.Button(master=pid_frame, text="Upload PID Params", command=self._get_pid_params)
