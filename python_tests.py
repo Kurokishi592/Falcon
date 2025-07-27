@@ -90,13 +90,9 @@ class TestFalcon(unittest.TestCase):
             time.sleep(0.5)
             fc.new_detection(detection2[0])
             velocity1 = fc.get_velocity()
-            print("Velocity 1:", velocity1)
-            print("Velocity 1:", float(round(velocity1[0], 2)), float(round(velocity1[1], 2)), float(round(velocity1[2], 2)))
             time.sleep(0.5)
             fc.new_detection(detection1[0])
             velocity2 = fc.get_velocity()
-            print("Velocity 2:", velocity2)
-            print("Velocity 2:", float(round(velocity2[0], 2)), float(round(velocity2[1], 2)), float(round(velocity2[2], 2)))
 
             self.assertEqual(float(round(velocity1[0], 2)), 0.02, "Expected x velocity 1 to be -0.02")
             self.assertEqual(float(round(velocity1[1], 2)), 0.0, "Expected y velocity 1 to be 0.0")
