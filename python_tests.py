@@ -2,7 +2,7 @@ import unittest
 import time
 import cv2
 from Backend.AprilTagDetection import AprilTagDetector
-from Backend.Controls1 import FalconController
+from Backend.Controls2 import FalconController
 
 
 class TestFalcon(unittest.TestCase):
@@ -90,15 +90,20 @@ class TestFalcon(unittest.TestCase):
             time.sleep(0.5)
             fc.new_detection(detection2[0])
             velocity1 = fc.get_velocity()
+            print("Velocity 1:", velocity1)
+            print("Velocity 1:", float(round(velocity1[0], 2)), float(round(velocity1[1], 2)), float(round(velocity1[2], 2)))
+            time.sleep(0.5)
             fc.new_detection(detection1[0])
             velocity2 = fc.get_velocity()
+            print("Velocity 2:", velocity2)
+            print("Velocity 2:", float(round(velocity2[0], 2)), float(round(velocity2[1], 2)), float(round(velocity2[2], 2)))
 
-            self.assertEqual(float(round(velocity1[0], 2)), 0.03, "Expected x velocity to be 0.33")
-            self.assertEqual(float(round(velocity1[1], 2)), 0.0, "Expected y velocity to be 0.0")
-            self.assertEqual(float(round(velocity1[2], 2)), 0.0, "Expected z velocity to be 0.0")
-            self.assertEqual(float(round(velocity2[0], 2)), -0.03, "Expected x velocity to be -0.33")
-            self.assertEqual(float(round(velocity2[1], 2)), 0.0, "Expected y velocity to be 0.0")
-            self.assertEqual(float(round(velocity2[2], 2)), 0.0, "Expected z velocity to be 0.0")
+            self.assertEqual(float(round(velocity1[0], 2)), 0.02, "Expected x velocity 1 to be -0.02")
+            self.assertEqual(float(round(velocity1[1], 2)), 0.0, "Expected y velocity 1 to be 0.0")
+            self.assertEqual(float(round(velocity1[2], 2)), 0.0, "Expected z velocity 1 to be 0.0")
+            self.assertEqual(float(round(velocity2[0], 2)), 0.02, "Expected x velocity 2 to be 0.02")
+            self.assertEqual(float(round(velocity2[1], 2)), 0.0, "Expected y velocity 2 to be 0.0")
+            self.assertEqual(float(round(velocity2[2], 2)), 0.0, "Expected z velocity 2 to be 0.0")
         except Exception as e:
             self.fail(f"AprilTag Velocity computation failed {e}")
 

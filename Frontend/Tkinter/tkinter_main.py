@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
 from Backend.AprilTagDetection import AprilTagDetector 	# Importing the AprilTag detector class from the Backend module
-from Backend.Controls1 import FalconController
+from Backend.Controls2 import FalconController
 from Backend.PID import PID
 
 
@@ -151,7 +151,7 @@ class Monitor:
 		if self.vid is not None:
 			ret, frame = self.vid.read()
 			if not ret:
-				self.cam_frame.after(10, self._cam_feed)
+				self.cam_frame.after(5, self._cam_feed)
 				return
 
 			# Process the frame for AprilTag detection
@@ -194,7 +194,7 @@ class Monitor:
 			self.cam_frame.photo_image = photo_image
 			self.cam_frame.configure(image=photo_image)
 			
-			self.cam_frame.after(10, self._cam_feed)
+			self.cam_frame.after(5, self._cam_feed)
 		else:
 			print("No camera selected or camera feed stopped.")
 
@@ -259,8 +259,8 @@ class Monitor:
 			self.yaw_label.config(text=self.imu_data["Yaw"] + "°")
 			self.int_temp_label.config(text=self.imu_data["Temp"] + "°C")
 
-			# Can choose any label, check every 1s
-			self.roll_label.after(1000, self._get_serial_data)
+			# Can choose any label, check every 0.1s
+			self.roll_label.after(100, self._get_serial_data)
 
 	def _get_pid_params(self):
 		# Function for PID submit button
@@ -382,7 +382,7 @@ class Monitor:
 			self.x_p_label.config(text=str(round(self.x_output, 3)) + "m/s")
 			self.y_p_label.config(text=str(round(self.y_output, 3)) + "m/s")
 			self.z_p_label.config(text=str(round(self.z_output, 3)) + "m/s")
-			self.pid_update_ID = self.x_p_label.after(100, self._start)
+			self.pid_update_ID = self.x_p_label.after(5, self._start)
 
 	def _failsafe(self):
 		# Function for failsafe button, sets all output to zero for the drone to go into hover mode
