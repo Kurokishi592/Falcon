@@ -3,6 +3,8 @@ import numpy as np
 
 class FalconController():
     def __init__(self):
+        self._last_id = None
+
         self.pose = None
         self._last_pose_t = None
         self._last_time = None
@@ -21,15 +23,22 @@ class FalconController():
     def new_detection(self, detection):
         """
         Process a new detection and update the pose and velocity
+        If the detection ID is not the same as the last one, it will make a new pose
         :param detection: Detection object containing pose_R and pose_t
         :return: None
         """
         if self._last_time is None:                 # For new detections
+            self._last_id = detection.tag_id
             self._last_time = time.time()
             self._last_pose_t = self._compute_pose(detection)
         elif self.pose is not None:
-            self._last_pose_t = self.pose.copy()
-            self.pose = self._compute_pose(detection)
+            if detection.tag_id != self._last_id:
+                self._last_time = time.time()
+                self._last_id = detection.tag_id
+                self._last_pose_t = self._compute_pose(detection)
+            else:
+                self._last_pose_t = self.pose.copy()
+                self.pose = self._compute_pose(detection)
         else:
             self.pose = self._compute_pose(detection)
 
