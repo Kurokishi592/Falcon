@@ -198,6 +198,12 @@ class Monitor:
 				self.y_label.config(text=str(round(self.y_raw, 3)) + " m/s")
 				self.z_label.config(text=str(round(self.z_raw, 3)) + " m/s")
 			else:
+				self.x_raw = 0
+				self.y_raw = 0
+				self.z_raw = 0
+				self.x_label.config(text="0m/s")
+				self.y_label.config(text="0m/s")
+				self.z_label.config(text="0m/s")
 				self.detected_message_label.config(text="No tags detected")
 
 			# Convert the frame to RGB format for Tkinter
@@ -401,10 +407,10 @@ class Monitor:
 		# Only plot if we have at least 2 points, all arrays are the same length, and t_data has at least 2 unique values
 		n = len(self.velocity_t_data)
 		if (n > 1 and n == len(self.velocity_x_data) and n == len(self.velocity_y_data) and n == len(self.velocity_z_data) and len(set(self.velocity_t_data)) > 1):
-			self.velocity_x_data = self.velocity_x_data[-100:]
-			self.velocity_y_data = self.velocity_y_data[-100:]
-			self.velocity_z_data = self.velocity_z_data[-100:]
-			self.velocity_t_data = self.velocity_t_data[-100:]
+			self.velocity_x_data = self.velocity_x_data[-50:]
+			self.velocity_y_data = self.velocity_y_data[-50:]
+			self.velocity_z_data = self.velocity_z_data[-50:]
+			self.velocity_t_data = self.velocity_t_data[-50:]
 
 			self.x_line.set_data(self.velocity_t_data, self.velocity_x_data)
 			self.y_line.set_data(self.velocity_t_data, self.velocity_y_data)
