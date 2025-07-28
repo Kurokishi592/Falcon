@@ -10,7 +10,7 @@ source .venv/Scripts/activate
 python.exe -m pip install --upgrade pip
 
 # Install required packages
-pip install opencv-python cv2-enumerate-cameras pupil-apriltags Pillow pyserial
+pip install opencv-python cv2-enumerate-cameras pupil-apriltags Pillow pyserial matplotlib
 
 cd Frontend/Tkinter 
 

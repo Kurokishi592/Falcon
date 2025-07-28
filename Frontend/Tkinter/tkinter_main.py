@@ -4,6 +4,11 @@ from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
 import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")  # Use TkAgg backend for matplotlib
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+import time
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
@@ -73,9 +78,18 @@ class Monitor:
 		self.setpt_p = None
 		self.setpt_m = None
 
-		# Marker loss timeout stuff
-		self.timeout = None
-		self.timeout_button = None
+		# Velocity graph stuff
+		self.velocity_plot = None
+		self.fig = None
+		self.ax = None
+		self.velocity_x_data = [-1]
+		self.velocity_y_data = [-1]
+		self.velocity_z_data = [-1]
+		self.velocity_t_data = [-1]
+
+		self.x_line = None
+		self.y_line = None
+		self.z_line = None
 
 		# Velocity stuff
 		# Measured velocity
@@ -108,8 +122,6 @@ class Monitor:
 		self.pitch_label = None
 		self.yaw_label = None
 		self.cam_fps_label = None
-		self.wind_spd_label = None
-		self.wind_dir_label = None
 		self.batt_vol_label = None
 		self.int_temp_label = None
 
@@ -118,6 +130,7 @@ class Monitor:
 			self._cam_start(list(self.dict_cams)[0])
 		
 		self.create_gui()
+		self._velocity_plot_update()
 
 	def _find_cams(self):
 		# Find cameras connected to the computer
@@ -372,10 +385,43 @@ class Monitor:
 		except ValueError:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
+	def _velocity_plot_update(self):
+		if self.x_raw is not None and self.y_raw is not None and self.z_raw is not None:
+			self.velocity_t_data.append(time.time())
+			self.velocity_x_data.append(self.x_raw)
+			self.velocity_y_data.append(self.y_raw)
+			self.velocity_z_data.append(self.z_raw)
+		# Remove the initial [0] if more than one data point exists and the first is -1	
+		if len(self.velocity_t_data) > 1 and self.velocity_t_data[0] == -1:
+			self.velocity_t_data.pop(0)
+			self.velocity_x_data.pop(0)
+			self.velocity_y_data.pop(0)
+			self.velocity_z_data.pop(0)
+
+		# Only plot if we have at least 2 points, all arrays are the same length, and t_data has at least 2 unique values
+		n = len(self.velocity_t_data)
+		if (n > 1 and n == len(self.velocity_x_data) and n == len(self.velocity_y_data) and n == len(self.velocity_z_data) and len(set(self.velocity_t_data)) > 1):
+			self.velocity_x_data = self.velocity_x_data[-100:]
+			self.velocity_y_data = self.velocity_y_data[-100:]
+			self.velocity_z_data = self.velocity_z_data[-100:]
+			self.velocity_t_data = self.velocity_t_data[-100:]
+
+			self.x_line.set_data(self.velocity_t_data, self.velocity_x_data)
+			self.y_line.set_data(self.velocity_t_data, self.velocity_y_data)
+			self.z_line.set_data(self.velocity_t_data, self.velocity_z_data)
+			try:
+				self.ax.relim()
+				self.ax.autoscale_view()
+				self.velocity_plot.draw()
+				self.fig.canvas.flush_events()  # Ensure the plot updates immediately
+			except Exception as e:
+				print(f"Error updating velocity plot: {e}")
+
+		self.x_label.after(10, self._velocity_plot_update)
+
 	def _start(self):
 		# Function for start button, starts PID calculation
 		if self.x_raw is not None and self.y_raw is not None and self.z_raw is not None:
-			print("Updating")
 			self.x_output = self.x_pid.update(setpoint=self.setpoint, measured_value=self.x_raw)
 			self.y_output = self.y_pid.update(setpoint=self.setpoint, measured_value=self.y_raw)
 			self.z_output = self.z_pid.update(setpoint=self.setpoint, measured_value=self.z_raw)
@@ -558,24 +604,25 @@ class Monitor:
 		self.param_pid_pass_fail.grid(column=3, row=4, padx=10, pady=10, sticky="ns")
 
 		####################
-		# Timeout Frame #
+		# Velocity Graph Frame #
 		####################
 
-		# Second subframe for Timeout
-		timeout_frame = ttk.LabelFrame(master=param_frame, text="Timeout")
-		timeout_frame.grid(column=0, row=1, padx=10, pady=10, sticky="nsew")
-		timeout_frame.columnconfigure((0, 1), weight=1)
-		timeout_frame.rowconfigure((0, 1), weight=1)
+		# Second subframe for Velocity Graph
+		velo_frame = ttk.LabelFrame(master=param_frame, text="Velocity")
+		velo_frame.grid(column=0, row=1, padx=10, pady=10, sticky="nsew")
+		velo_frame.columnconfigure(0, weight=1)
+		velo_frame.rowconfigure(0, weight=1)
 
-		# Add Timeout label
-		timeout_label = ttk.Label(master=timeout_frame, text="Timeout (seconds)")		# Make new label
-		timeout_label.grid(column=0, row=0, padx=10, pady=10, sticky="nw")				# Add label to Timeout frame
-		self.timeout = ttk.Entry(master=timeout_frame, width=30)						# Make new Entry (user input box)
-		self.timeout.grid(column=1, row=0, padx=10, pady=10, sticky="ns")				# Place Entry beside the label
+		self.fig, self.ax = plt.subplots(figsize=(1, 2))
+		self.velocity_plot = FigureCanvasTkAgg(self.fig, master=velo_frame)
+		self.velocity_plot.get_tk_widget().grid(column=0, row=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
-		# Add Timeout button
-		self.timeout_button = ttk.Button(master=timeout_frame, text="Upload Timeout")
-		self.timeout_button.grid(column=0, row=1, columnspan=2, padx=20, pady=10, ipadx=15, ipady=15, sticky="n")
+		self.x_line, = self.ax.plot(self.velocity_t_data, self.velocity_x_data, label='X Velocity', color='r')
+		self.y_line, = self.ax.plot(self.velocity_t_data, self.velocity_y_data, label='Y Velocity', color='g')
+		self.z_line, = self.ax.plot(self.velocity_t_data, self.velocity_z_data, label='Z Velocity', color='b')
+		self.ax.set_xlabel('Time (s)')
+		self.ax.set_ylabel('Velocity (m/s)')
+		self.ax.legend()
 
 		####################
 		# Velocity Data Frame #
@@ -618,45 +665,37 @@ class Monitor:
 		####################
 		sensor_frame = ttk.LabelFrame(master=self.window, text="Sensor Data")
 		sensor_frame.grid(column=1, row=2, padx=10, pady=10, sticky="ew")
-		sensor_frame.columnconfigure((0, 1, 2, 3), weight=1)
-		sensor_frame.rowconfigure((0, 1, 2, 3), weight=1)
+		sensor_frame.columnconfigure((0, 1, 2), weight=1)
+		sensor_frame.rowconfigure((0, 1, 2), weight=1)
 
 		# Add all the associated labels and add them to sensor frame
 		s_roll_label = ttk.Label(master=sensor_frame, text="Roll")
 		s_pitch_label = ttk.Label(master=sensor_frame, text="Pitch")
 		s_yaw_label = ttk.Label(master=sensor_frame, text="Yaw")
 		s_cam_fps_label = ttk.Label(master=sensor_frame, text="Camera FPS")
-		s_wind_spd_label = ttk.Label(master=sensor_frame, text="Wind Speed")
-		s_wind_dir_label = ttk.Label(master=sensor_frame, text="Wind Direction")
 		s_batt_vol_label = ttk.Label(master=sensor_frame, text="Battery Voltage")
 		s_int_temp_label = ttk.Label(master=sensor_frame, text="Internal Temperature")
 		s_roll_label.grid(column=0, row=0, padx=5, pady=5, sticky="n")
 		s_pitch_label.grid(column=1, row=0, padx=5, pady=5, sticky="n")
 		s_yaw_label.grid(column=2, row=0, padx=5, pady=5, sticky="n")
-		s_cam_fps_label.grid(column=3, row=0, padx=5, pady=5, sticky="n")
-		s_wind_spd_label.grid(column=0, row=2, padx=5, pady=5, sticky="n")
-		s_wind_dir_label.grid(column=1, row=2, padx=5, pady=5, sticky="n")
-		s_batt_vol_label.grid(column=2, row=2, padx=5, pady=5, sticky="n")
-		s_int_temp_label.grid(column=3, row=2, padx=5, pady=5, sticky="n")
+		s_cam_fps_label.grid(column=0, row=2, padx=5, pady=5, sticky="n")
+		s_batt_vol_label.grid(column=1, row=2, padx=5, pady=5, sticky="n")
+		s_int_temp_label.grid(column=2, row=2, padx=5, pady=5, sticky="n")
 
 		# Add all associated sensor data labels
 		self.roll_label = ttk.Label(master=sensor_frame, text="0°")
 		self.pitch_label = ttk.Label(master=sensor_frame, text="0°")
 		self.yaw_label = ttk.Label(master=sensor_frame, text="0°")
 		self.cam_fps_label = ttk.Label(master=sensor_frame, text="0fps")
-		self.wind_spd_label = ttk.Label(master=sensor_frame, text="0m/s")
-		self.wind_dir_label = ttk.Label(master=sensor_frame, text="0°")
 		self.batt_vol_label = ttk.Label(master=sensor_frame, text="0V")
 		self.int_temp_label = ttk.Label(master=sensor_frame, text="0°C")
 
 		self.roll_label.grid(column=0, row=1, padx=5, pady=5, sticky="n")
 		self.pitch_label.grid(column=1, row=1, padx=5, pady=5, sticky="n")
 		self.yaw_label.grid(column=2, row=1, padx=5, pady=5, sticky="n")
-		self.cam_fps_label.grid(column=3, row=1, padx=5, pady=5, sticky="n")
-		self.wind_spd_label.grid(column=0, row=3, padx=5, pady=5, sticky="n")
-		self.wind_dir_label.grid(column=1, row=3, padx=5, pady=5, sticky="n")
-		self.batt_vol_label.grid(column=2, row=3, padx=5, pady=5, sticky="n")
-		self.int_temp_label.grid(column=3, row=3, padx=5, pady=5, sticky="n")
+		self.cam_fps_label.grid(column=0, row=3, padx=5, pady=5, sticky="n")
+		self.batt_vol_label.grid(column=1, row=3, padx=5, pady=5, sticky="n")
+		self.int_temp_label.grid(column=2, row=3, padx=5, pady=5, sticky="n")
 
 
 def check_cams():
