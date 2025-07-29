@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import time
 import sys
 import os
+import threading
+import queue
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 from Backend.SerialPython import SerialComms
 from Backend.AprilTagDetection import AprilTagDetector 	# Importing the AprilTag detector class from the Backend module
@@ -21,6 +23,11 @@ from Backend.PID import PID
 class Monitor:
 	def __init__(self, window):
 		self.window = window
+
+		# Camera threading/queue fields
+		self.cam_thread = None
+		self.cam_queue = queue.Queue()
+		self.cam_thread_running = False
 
 		# Camera instance stuff
 		self.vid = None
@@ -128,9 +135,10 @@ class Monitor:
 		self._find_cams()
 		if self.num_cams == 1:
 			self._cam_start(list(self.dict_cams)[0])
-		
+
 		self.create_gui()
 		self._velocity_plot_update()
+		self._process_cam_queue()
 
 	def _find_cams(self):
 		# Find cameras connected to the computer
@@ -149,73 +157,87 @@ class Monitor:
 			self.vid = cv2.VideoCapture(self.use_cam)
 			self.vid.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
 			self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-			self._cam_feed()
+			self._start_cam_thread()
 
 	def _cam_stop(self):
 		# Stop the camera feed
 		self.use_cam = None
+		self.cam_thread_running = False
 		if self.vid is not None:
 			self.vid.release()
 			self.vid = None
 			self.cam_frame.photo_image = None
 
-	def _cam_feed(self):
-		# Get the camera feed and process it for AprilTag detection
-		if self.vid is not None:
+	def _start_cam_thread(self):
+		# Start the camera processing thread
+		if self.cam_thread is not None and self.cam_thread.is_alive():
+			self.cam_thread_running = False
+			self.cam_thread.join()
+		self.cam_thread_running = True
+		self.cam_thread = threading.Thread(target=self._cam_thread_func, daemon=True)
+		self.cam_thread.start()
+
+	def _cam_thread_func(self):
+		# Background thread for camera capture and AprilTag detection
+		while self.cam_thread_running and self.vid is not None:
 			ret, frame = self.vid.read()
 			if not ret:
-				self.cam_frame.after(5, self._cam_feed)
-				return
-
+				time.sleep(0.01)
+				continue
 			# Process the frame for AprilTag detection
 			self.apriltag_detector.cx = self.width / 2
-			self.apriltag_detector.cy = self.height / 2	
-
-			# Run detection
+			self.apriltag_detector.cy = self.height / 2
 			detections = self.apriltag_detector.detect(frame)
-
 			# Draw detections on the frame
 			for det in detections:
 				corners = np.int32(det.corners)
 				cv2.polylines(frame, [corners], isClosed=True, color=(0, 255, 0), thickness=2)
 				cv2.putText(frame, f"ID: {det.tag_id}", tuple(np.int32(det.center)),
 							cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-
-			# Display detections in label
 			if detections:
 				message = f"Detected {len(detections)} tag(s): " + ', '.join(str(d.tag_id) for d in detections)
 				self.detected_message_label.config(text=message)
 				print(message)
-
-				# Adding velocity estimation
-				det = detections[0] if isinstance(detections, list) else detections				# If detections is a list, take first
+				det = detections[0] if isinstance(detections, list) else detections
 				self.velocity_estimator.new_detection(det)
 				temp_velocity = self.velocity_estimator.get_velocity()
-				self.x_raw = temp_velocity[0]
-				self.y_raw = temp_velocity[1]
-				self.z_raw = temp_velocity[2]
-				self.x_label.config(text=str(round(self.x_raw, 3)) + " m/s")
-				self.y_label.config(text=str(round(self.y_raw, 3)) + " m/s")
-				self.z_label.config(text=str(round(self.z_raw, 3)) + " m/s")
+				x_raw = temp_velocity[0]
+				y_raw = temp_velocity[1]
+				z_raw = temp_velocity[2]
 			else:
-				self.x_raw = 0
-				self.y_raw = 0
-				self.z_raw = 0
-				self.x_label.config(text="0m/s")
-				self.y_label.config(text="0m/s")
-				self.z_label.config(text="0m/s")
+				x_raw = y_raw = z_raw = 0
 				self.detected_message_label.config(text="No tags detected")
 
-			# Convert the frame to RGB format for Tkinter
 			raw_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 			conv_image = Image.fromarray(raw_image)
-			photo_image = ImageTk.PhotoImage(image=conv_image)
-			self.cam_frame.photo_image = photo_image
-			self.cam_frame.configure(image=photo_image)
-			
-			self.cam_frame.after(5, self._cam_feed)
-		else:
-			print("No camera selected or camera feed stopped.")
+			self.cam_queue.put({
+				'photo_image': conv_image,
+				'x_raw': x_raw,
+				'y_raw': y_raw,
+				'z_raw': z_raw
+			})
+			time.sleep(0.03)  # ~30 FPS
+
+	def _process_cam_queue(self):
+		# Called in main thread to update GUI from camera thread
+		try:
+			while not self.cam_queue.empty():
+				data = self.cam_queue.get_nowait()
+				photo_image = ImageTk.PhotoImage(image=data['photo_image'])
+				self.cam_frame.photo_image = photo_image
+				self.cam_frame.configure(image=photo_image)
+				if data['x_raw'] is not None and data['y_raw'] is not None and data['z_raw'] is not None:
+					self.x_raw = data['x_raw']
+					self.y_raw = data['y_raw']
+					self.z_raw = data['z_raw']
+					self.x_label.config(text=str(round(self.x_raw, 3)) + " m/s")
+					self.y_label.config(text=str(round(self.y_raw, 3)) + " m/s")
+					self.z_label.config(text=str(round(self.z_raw, 3)) + " m/s")
+			if self.use_cam is None:
+				self.cam_frame.photo_image = None
+		except Exception as e:
+			print(f"Error updating camera frame: {e}")
+		self.cam_frame.after(20, self._process_cam_queue)
 
 	def _cam_selection(self):
 		# Function for start camera button
@@ -423,7 +445,7 @@ class Monitor:
 			except Exception as e:
 				print(f"Error updating velocity plot: {e}")
 		
-		self.x_label.after(5, self._velocity_plot_update)
+		self.x_label.after(50, self._velocity_plot_update)
 
 	def _start(self):
 		# Function for start button, starts PID calculation
