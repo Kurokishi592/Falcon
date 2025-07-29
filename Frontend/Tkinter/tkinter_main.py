@@ -29,7 +29,7 @@ class Monitor:
 
 		# Camera frame stuff
 		self.cam_frame = None
-		self.width, self.height = 600, 400
+		self.width, self.height = 800, 600
 
 		# Camera select stuff
 		self.dict_cams = {}
@@ -422,8 +422,8 @@ class Monitor:
 				self.fig.canvas.flush_events()  # Ensure the plot updates immediately
 			except Exception as e:
 				print(f"Error updating velocity plot: {e}")
-
-		self.x_label.after(10, self._velocity_plot_update)
+		
+		self.x_label.after(5, self._velocity_plot_update)
 
 	def _start(self):
 		# Function for start button, starts PID calculation
@@ -457,15 +457,16 @@ class Monitor:
 		####################
 
 		# Large frame on the left for showing live camera feed
-		camera_frame = ttk.LabelFrame(master=self.window, text="Camera View")
+		camera_frame = ttk.LabelFrame(master=self.window, text="Camera View", height=550, width=300)
 		# Grid the camera frame
 		camera_frame.grid(column=0, row=0, padx=10, pady=10, sticky="new")
-		camera_frame.columnconfigure(0, weight=1, minsize=300)
-		camera_frame.rowconfigure(0, weight=1, minsize=400)
+		camera_frame.columnconfigure(0, weight=1)
+		camera_frame.rowconfigure(0, weight=1)
+		camera_frame.grid_propagate(False)  # Prevent the frame from resizing to fit the label
 
 		# Live camera feed
 		self.cam_frame = ttk.Label(master=camera_frame, text="Multiple cameras detected, use the dropdown to select")
-		self.cam_frame.grid(column=0, row=0, padx=20, pady=20, sticky="")
+		self.cam_frame.grid(column=0, row=0, sticky="")
 
 		####################
 		# Detection Frame #
@@ -723,4 +724,5 @@ if __name__ == '__main__':
 	main_window.rowconfigure((0, 1, 2), weight=1)
 	main_window.minsize(1050, 710)
 	app = Monitor(main_window)
+	main_window.protocol("WM_DELETE_WINDOW", sys.exit)
 	main_window.mainloop()
