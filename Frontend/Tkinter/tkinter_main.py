@@ -52,9 +52,11 @@ class Monitor:
 		# AprilTag stuff
 		self.detected_message_label = None
 		self.detected_message_data = "Nothing"
-		self.apriltag_detector = AprilTagDetector()
+		# self.apriltag_detector = AprilTagDetector()
+		self.apriltag_detector = None
 
-		self.velocity_estimator = FalconController()
+		# self.velocity_estimator = FalconController()
+		self.velocity_estimator = None
 
 		# Control buttons
 		self.start = None
@@ -137,6 +139,24 @@ class Monitor:
 		self.create_gui()
 		self._velocity_plot_update()
 		self._process_cam_queue()
+
+	def set_detector(self, detector):
+		# Set the AprilTag detector instance
+		self.apriltag_detector = detector
+		print("AprilTag detector set.")
+
+	def set_velocity_estimator(self, estimator):
+		# Set the FalconController instance
+		self.velocity_estimator = estimator
+		print("Velocity estimator set.")
+	
+	def get_detector(self):
+		# Get the AprilTag detector instance
+		return self.apriltag_detector
+
+	def get_velocity_estimator(self):
+		# Get the FalconController instance
+		return self.velocity_estimator
 
 	def _find_cams(self):
 		# Find cameras connected to the computer
@@ -746,5 +766,7 @@ if __name__ == '__main__':
 	main_window.rowconfigure((0, 1, 2), weight=1)
 	main_window.minsize(1050, 710)
 	app = Monitor(main_window)
+	app.set_detector(AprilTagDetector())
+	app.set_velocity_estimator(FalconController())
 	main_window.protocol("WM_DELETE_WINDOW", sys.exit)
 	main_window.mainloop()
