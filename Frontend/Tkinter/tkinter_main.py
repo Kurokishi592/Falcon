@@ -61,6 +61,10 @@ class Monitor:
 		# Control buttons
 		self.start = None
 		self.failsafe = None
+		self.tele_start = None
+		self.tele_stop = None
+
+		self.tele_enabled = False
 
 		# PID stuff
 		self.param_p_f = None
@@ -320,6 +324,13 @@ class Monitor:
 
 			# Can choose any label, check every 0.1s
 			self.roll_label.after(100, self._get_serial_data)
+	
+	def send_serial_data(self):
+		# Function to send serial data to Telegram Bot (in main thread)
+		if self.teensy_serial is not None:
+			return self.imu_data
+		else:
+			return None
 
 	def _get_pid_params(self):
 		# Function for PID submit button

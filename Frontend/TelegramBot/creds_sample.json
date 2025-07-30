@@ -1,4 +1,3 @@
 {
-    "username": "@(insert Telegram username here)",
     "API_KEY": "(insert Telegram API key here)"
 }
