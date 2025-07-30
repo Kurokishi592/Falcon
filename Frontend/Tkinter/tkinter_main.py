@@ -4,8 +4,6 @@ from cv2_enumerate_cameras import enumerate_cameras
 import cv2
 from PIL import Image, ImageTk
 import numpy as np
-import matplotlib
-matplotlib.use("TkAgg")  # Use TkAgg backend for matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import time
@@ -414,7 +412,7 @@ class Monitor:
 			self.param_pid_pass_fail.config(text="Non-integer")
 
 	def _velocity_plot_update(self):
-		if self.x_raw is not None and self.y_raw is not None and self.z_raw is not None:
+		if self.vid is not None and self.x_raw is not None and self.y_raw is not None and self.z_raw is not None:
 			self.velocity_t_data.append(time.time())
 			self.velocity_x_data.append(self.x_raw)
 			self.velocity_y_data.append(self.y_raw)
@@ -428,7 +426,9 @@ class Monitor:
 
 		# Only plot if we have at least 2 points, all arrays are the same length, and t_data has at least 2 unique values
 		n = len(self.velocity_t_data)
-		if (n > 1 and n == len(self.velocity_x_data) and n == len(self.velocity_y_data) and n == len(self.velocity_z_data) and len(set(self.velocity_t_data)) > 1):
+		if (self.vid is not None and n > 1 and 
+	  n == len(self.velocity_x_data) and n == len(self.velocity_y_data) and 
+	  n == len(self.velocity_z_data) and len(set(self.velocity_t_data)) > 1):
 			self.velocity_x_data = self.velocity_x_data[-50:]
 			self.velocity_y_data = self.velocity_y_data[-50:]
 			self.velocity_z_data = self.velocity_z_data[-50:]
