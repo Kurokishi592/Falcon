@@ -16,8 +16,8 @@ def check_params(tkinter_app, estimator):
 	while True:
 		curr_time = time.time()
 		delta_time = curr_time - last_time
-		# Check that 3s has passed since the last check
-		if delta_time < 3:
+		# Check that 2s has passed since the last check
+		if delta_time < 2:
 			time.sleep(0.1)
 			continue
 		imu_data = tkinter_app.send_serial_data()

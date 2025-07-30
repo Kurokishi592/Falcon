@@ -10,9 +10,7 @@ source .venv/Scripts/activate
 python.exe -m pip install --upgrade pip
 
 # Install required packages
-pip install opencv-python cv2-enumerate-cameras pupil-apriltags Pillow pyserial matplotlib
+pip install opencv-python cv2-enumerate-cameras pupil-apriltags Pillow pyserial matplotlib python-telegram-bot
 
-cd Frontend/Tkinter 
-
-# Run the Tkinter application
-python tkinter_main.py
+# Run the main script
+python main.py
