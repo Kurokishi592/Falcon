@@ -13,6 +13,13 @@ class PID:
         self.integral = 0.0
         self.prev_error = 0.0
 
+    def get_values(self):
+        """
+        Returns the current PID values
+        :return: Tuple of (kp, ki, kd)
+        """
+        return self.kp, self.ki, self.kd
+
     def modify_values(self, kp, ki, kd):
         """
         Allows users to modify the PID values

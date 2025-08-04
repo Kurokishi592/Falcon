@@ -3,6 +3,7 @@ import time
 import cv2
 from Backend.AprilTagDetection import AprilTagDetector
 from Backend.Controls2 import FalconController
+from Backend.PID import PID
 
 
 class TestFalcon(unittest.TestCase):
@@ -123,6 +124,28 @@ class TestFalcon(unittest.TestCase):
             self.assertEqual(velocity[2], 0.0, "Expected z velocity to be 0.0")
         except Exception as e:
             self.fail(f"FalconController zero velocity failed {e}")
+
+    def test_PID(self):
+        """
+        Tests if FalconController PID controller computes the correct control output
+        Should return a non-zero control output for a given error
+        """
+        try:
+            pid = PID(0.2, 0.1, 0.05)
+            self.assertTrue(pid.get_values() == (0.2, 0.1, 0.05), "PID values do not match expected values")
+
+            output1 = pid.update(1.0, 0.5)
+            self.assertTrue(round(output1, 1) == 2.6, "PID output should be 2.6")
+
+            pid.modify_values(0.3, 0.2, 0.1)
+            self.assertTrue(pid.get_values() == (0.3, 0.2, 0.1), "PID values after modification do not match expected values")
+
+            output2 = pid.update(1.0, 0.5)
+            self.assertTrue(round(output2, 1) == 0.2, "PID output should be 0.2")
+
+        except Exception as e:
+            self.fail(f"FalconController PID computation failed {e}")
+
 
 if __name__ == '__main__':
     unittest.main()
